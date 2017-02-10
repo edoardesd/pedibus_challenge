@@ -1,4 +1,4 @@
-npackage pedibus_prova;
+package pedibus_prova;
 
 public class Point { 
     private double x;   // Cartesian
