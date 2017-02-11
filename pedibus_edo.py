@@ -2,6 +2,8 @@ import numpy as np
 import time
 import math
 import pprint as pp
+import itertools
+import operator
 from itertools import chain
 from collections import defaultdict
 start = time.time()
@@ -12,7 +14,7 @@ def parse_dat_file(dat_file):
 
 	n = int(file_dat[1][11:]) #parse param n: dimension of array
 
-	alpha = float(file_dat[3][15:]) #parse param alpha
+	ALPHA = float(file_dat[3][15:]) #parse param alpha
 	file_dat = file_dat[5:]
 
 	raw_x = []
@@ -74,13 +76,15 @@ def parse_dat_file(dat_file):
 	for k, v in chain(coord_x.items(), coord_y.items()):
     		coord[k].append(v)
 	
-	return n, alpha, coord
+	return n, ALPHA, coord
 
+#calcola distanza euclidea tra due nodi
 def node_dist(index_1, index_2):
 	sub_x = math.pow((node[index_1][0] - node[index_2][0]), 2)
 	sub_y = math.pow((node[index_1][1] - node[index_2][1]), 2)
 	return math.sqrt(sub_x + sub_y)
 
+#crea dizionario con distanza di un nodo ad ogni altro nodo
 def compute_distance():
 	for key1, value1 in node.items():
 		distance.clear()
@@ -91,26 +95,72 @@ def compute_distance():
 
 	return neighbor
 
+#popola l'albero della soluzione con la soluzione base
+def create_starting_solution():
+	for i in range(1,n+1):
+			tree[i].append(i)
+			tree[i].append(0)
+
+	return tree
+
+#eliminare il nodo myNode
+def delete_node(myNode):
+	for i in range (1, len(tree)+1):
+		if myNode in tree[i]: 
+			tree[i].remove(myNode)
+
+def remove_zero_path(myDict):
+	for i in range(1, len(myDict)+1):
+		if len(myDict[i]) == 1:
+			elim = i
+
+	del myDict[elim]
+	return myDict
 ############## VARIABLES ##############
 
 #initialize dictionary for bus stop coordinates
-coord_x = {}
-coord_y = {}
-neighbor = {}
-distance = {}
+coord_x = {} #per coordinate x quando parso il dat
+coord_y = {} #per coordinate y quando parso il dat
+neighbor = {} #ogni nodo con gli altri per distanza
+distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
+tree = defaultdict(list) #lista soluzioni
 
 file = 'res/pedibus_10.dat'
 
 ############## BODY ##############
-n, alpha, node = parse_dat_file(file)
-
-
-
-
-pp.pprint(compute_distance())
+n, ALPHA, node = parse_dat_file(file)
 
 #print parameters for check
-print "\nn: ",n, "\n" "alpha: ", alpha, "\n", "nodes:", node
+print "n: ",n, "\n" "ALPHA: ", ALPHA, "\n\n"
+
+neighbor = compute_distance()
+
+tree = create_starting_solution()
+sorted_x = sorted(neighbor[0].items(), key=operator.itemgetter(1)) #ordinare per vicinanza i nodi rispetto al nodo zero (tra quadre)
+
+pp.pprint(tree)
+
+sorted_x = sorted(neighbor[1].items(), key=operator.itemgetter(1))
+candidate_list = sorted_x[0] #candidate list: contiene in 0 il nodo e in 1 la distanza [nodo, distanza]
+candidate_node = candidate_list[0]
+candidate_dist = candidate_list[1]
+print candidate_node
+print neighbor[1][0], "\n"
+
+if candidate_node + neighbor[1][0] < ALPHA*neighbor[candidate_node][0]:
+	for i in range (1, n+1):
+		if 1 in tree[i]:
+			print candidate_node
+			delete_node(candidate_node)
+			tree[i].insert(0, candidate_node) #update path: inserisce candidate_node nella posizione 0 (primo della lista)
+			print "ok, dovrei updatare path"
+else: print "nada"
+
+remove_zero_path(tree)
+pp.pprint(tree)
+
+print "\nSolution has", len(tree),"leaves"
+
 
 #time
 print '\nIt took', time.time()-start, 'seconds.'
