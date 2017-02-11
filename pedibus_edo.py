@@ -85,7 +85,7 @@ def node_dist(index_1, index_2):
 	return math.sqrt(sub_x + sub_y)
 
 #crea dizionario con distanza di un nodo ad ogni altro nodo
-def compute_distance():
+def node_distance():
 	for key1, value1 in node.items():
 		distance.clear()
 		for key2, value2 in node.items():
@@ -109,13 +109,33 @@ def delete_node(myNode):
 		if myNode in tree[i]: 
 			tree[i].remove(myNode)
 
-def remove_zero_path(myDict):
-	for i in range(1, len(myDict)+1):
-		if len(myDict[i]) == 1:
+#rimuovere nodi solo con 0
+def remove_zero_path(my_dict):
+	bool_elim = False
+	for i in range(1, len(my_dict)+1):
+		if len(my_dict[i]) == 1:
+			bool_elim = True
 			elim = i
 
-	del myDict[elim]
-	return myDict
+	if bool_elim:
+		del my_dict[elim]
+	return my_dict
+
+#controlla alpha condition
+def check_alpha(my_path, new_node):
+	tot_dist = 0 #inizializzo distanza totale a zero
+	times_alpha = ALPHA*neighbor[new_node][0] #alpha + distanza di new_node da 0
+	print "blblba ",times_alpha, neighbor[new_node][0]
+	for i in range (len(my_path)-1):
+		tot_dist = tot_dist + node_dist(my_path[i], my_path[i+1])
+		print "\nDistanza totale path: ", tot_dist + neighbor[new_node][0] #ATTENZIONEEEEE, distanza da il nodo mio agli altri
+	if tot_dist + neighbor[new_node][0] <= times_alpha:
+		print "true"
+		return True
+	else:
+		print "false"
+		return False
+
 ############## VARIABLES ##############
 
 #initialize dictionary for bus stop coordinates
@@ -133,22 +153,20 @@ n, ALPHA, node = parse_dat_file(file)
 #print parameters for check
 print "n: ",n, "\n" "ALPHA: ", ALPHA, "\n\n"
 
-neighbor = compute_distance()
+neighbor = node_distance()
 
 tree = create_starting_solution()
 sorted_x = sorted(neighbor[0].items(), key=operator.itemgetter(1)) #ordinare per vicinanza i nodi rispetto al nodo zero (tra quadre)
-
-pp.pprint(tree)
-
 sorted_x = sorted(neighbor[1].items(), key=operator.itemgetter(1))
 candidate_list = sorted_x[0] #candidate list: contiene in 0 il nodo e in 1 la distanza [nodo, distanza]
 candidate_node = candidate_list[0]
 candidate_dist = candidate_list[1]
-print candidate_node
+print candidate_node, candidate_dist
 print neighbor[1][0], "\n"
 
-if candidate_node + neighbor[1][0] < ALPHA*neighbor[candidate_node][0]:
-	for i in range (1, n+1):
+print tree[1]
+if check_alpha(tree[1], candidate_node) == True:
+	for i in tree:
 		if 1 in tree[i]:
 			print candidate_node
 			delete_node(candidate_node)
@@ -158,6 +176,7 @@ else: print "nada"
 
 remove_zero_path(tree)
 pp.pprint(tree)
+
 
 print "\nSolution has", len(tree),"leaves"
 
