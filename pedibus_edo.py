@@ -1,11 +1,13 @@
-import numpy as np
-import time
-import math
-import pprint as pp
-import itertools
-import operator
 from itertools import chain
 from collections import defaultdict
+
+import numpy as np
+import pprint as pp
+import time
+import math
+import itertools
+import operator
+
 start = time.time()
 
 ############## FUNCTION DECLARATION ##############
@@ -121,21 +123,43 @@ def remove_zero_path(my_dict):
 		del my_dict[elim]
 	return my_dict
 
-#controlla alpha condition
-def check_alpha(my_path, new_node):
-	tot_dist = 0 #inizializzo distanza totale a zero
+#controlla alpha condition, new_path e' in path con anche il nuovo nodo, new_node e' il nuovo nodo
+def check_alpha(new_path, new_node):
+
+	dist_tot = 0 #inizializzo distanza totale a zero
 	times_alpha = ALPHA*neighbor[new_node][0] #alpha + distanza di new_node da 0
-	print "blblba ",times_alpha, neighbor[new_node][0]
-	for i in range (len(my_path)-1):
-		tot_dist = tot_dist + node_dist(my_path[i], my_path[i+1])
-		print "\nDistanza totale path: ", tot_dist + neighbor[new_node][0] #ATTENZIONEEEEE, distanza da il nodo mio agli altri
-	if tot_dist + neighbor[new_node][0] <= times_alpha:
-		print "true"
+	
+	for i in range (len(new_path)-1):
+		dist_tot = dist_tot + node_dist(new_path[i], new_path[i+1])
+	
+	print "\nDistanza totale path: ", dist_tot # dist_tot distanza da il nodo mio agli altri
+	
+	if dist_tot <= times_alpha:
+		print "Condizione alpha soddisfatta, il path col nuovo nodo va bene"
 		return True
+	
 	else:
-		print "false"
+		print "Condizione alpha NON soddisfatta, path da scartare"
 		return False
 
+#creo cluster: creo un dizionario.
+#le key sono i nodi, i value sono una lista con i nodi all'interno del raggio alpha*distanza da root
+def create_cluster():
+	print "Inizio a creare cluster!"
+	single_cluster = []
+	for key in node.items(): #scandisco tutti i nodi
+		if key[0] != 0: #salto il nodo 0
+			alpha_range = ALPHA*neighbor[key[0]][0]
+			node_sorted = sorted(neighbor[key[0]].items(), key=operator.itemgetter(1)) #ordinare per vicinanza i nodi rispetto al nodo tra quadre
+			del single_cluster[:]
+			for j in range (len(node_sorted)):
+				if node_sorted[j][0] != 0: #il nodo 0 (scuola) non deve essere nel cluster
+					if node_sorted[j][1] <= alpha_range:
+						single_cluster.append(node_sorted[j][0])
+		
+			cluster[key[0]] = list(single_cluster) #copia il cluster attuale nel dizionario di cluster
+
+	return cluster
 ############## VARIABLES ##############
 
 #initialize dictionary for bus stop coordinates
@@ -143,6 +167,9 @@ coord_x = {} #per coordinate x quando parso il dat
 coord_y = {} #per coordinate y quando parso il dat
 neighbor = {} #ogni nodo con gli altri per distanza
 distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
+cluster = {} #cluster di ogni nodo (i nodi all'interno del raggio alpha*distanza da root)
+
+
 tree = defaultdict(list) #lista soluzioni
 
 file = 'res/pedibus_10.dat'
@@ -153,33 +180,10 @@ n, ALPHA, node = parse_dat_file(file)
 #print parameters for check
 print "n: ",n, "\n" "ALPHA: ", ALPHA, "\n\n"
 
-neighbor = node_distance()
+neighbor = node_distance() 
 
-tree = create_starting_solution()
-sorted_x = sorted(neighbor[0].items(), key=operator.itemgetter(1)) #ordinare per vicinanza i nodi rispetto al nodo zero (tra quadre)
-sorted_x = sorted(neighbor[1].items(), key=operator.itemgetter(1))
-candidate_list = sorted_x[0] #candidate list: contiene in 0 il nodo e in 1 la distanza [nodo, distanza]
-candidate_node = candidate_list[0]
-candidate_dist = candidate_list[1]
-print candidate_node, candidate_dist
-print neighbor[1][0], "\n"
+cluster = create_cluster()
 
-print tree[1]
-if check_alpha(tree[1], candidate_node) == True:
-	for i in tree:
-		if 1 in tree[i]:
-			print candidate_node
-			delete_node(candidate_node)
-			tree[i].insert(0, candidate_node) #update path: inserisce candidate_node nella posizione 0 (primo della lista)
-			print "ok, dovrei updatare path"
-else: print "nada"
-
-remove_zero_path(tree)
-pp.pprint(tree)
-
-
-print "\nSolution has", len(tree),"leaves"
-
-
+pp.pprint(cluster)
 #time
 print '\nIt took', time.time()-start, 'seconds.'
