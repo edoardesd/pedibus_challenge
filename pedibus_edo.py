@@ -1,14 +1,16 @@
+import time
+start = time.time() #faccio partire il tempo 
+
+############## IMPORT LIBRARIES ##############
 from itertools import chain
 from collections import defaultdict
 
 import numpy as np
 import pprint as pp
-import time
 import math
 import itertools
 import operator
 
-start = time.time()
 
 ############## FUNCTION DECLARATION ##############
 def parse_dat_file(dat_file):
@@ -160,6 +162,20 @@ def create_cluster():
 			cluster[key[0]] = list(single_cluster) #copia il cluster attuale nel dizionario di cluster
 
 	return cluster
+
+#ritorna il cluster piu' grande. Ritorna lunghezza, valori cluster e id cluster. magari si puo' far ritornare meno roba
+def getMaxCluster(my_cluster):
+
+
+
+    return max((len(v), v, k) for k, v in my_cluster.iteritems())
+
+#instanzia una lista con tutti i nodi non presi nella soluzione
+def initialize_queue():
+	for i in range(1, n+1):
+		queue.append(i)
+
+	return queue
 ############## VARIABLES ##############
 
 #initialize dictionary for bus stop coordinates
@@ -168,7 +184,7 @@ coord_y = {} #per coordinate y quando parso il dat
 neighbor = {} #ogni nodo con gli altri per distanza
 distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
 cluster = {} #cluster di ogni nodo (i nodi all'interno del raggio alpha*distanza da root)
-
+queue = [] #nodi non ancora assegnati
 
 tree = defaultdict(list) #lista soluzioni
 
@@ -183,7 +199,16 @@ print "n: ",n, "\n" "ALPHA: ", ALPHA, "\n\n"
 neighbor = node_distance() 
 
 cluster = create_cluster()
+queue = initialize_queue()
 
-pp.pprint(cluster)
+
+
+#pp.pprint(cluster)
+
+print getMaxCluster(cluster)
+
+
+
+############## END BODY ##############
 #time
 print '\nIt took', time.time()-start, 'seconds.'
