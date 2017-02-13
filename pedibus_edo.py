@@ -130,7 +130,7 @@ def check_alpha(new_path):
 
 	dist_tot = 0 #inizializzo distanza totale a zero
 	final_leaf = neighbor[new_path[0]][0] #nodo finale del path, quello dal quale controllare la distanza
-	times_alpha = ALPHA*final_leaf #alpha + distanza di new_node da 0
+	times_alpha = ALPHA*final_leaf 
 	
 	print "Leaf: ", final_leaf, "times alfa: ", times_alpha
 	for i in range (len(new_path)-1):
@@ -138,16 +138,19 @@ def check_alpha(new_path):
 		print dist_tot
 	
 	print "\nDistanza totale path: ", dist_tot # dist_tot distanza da il nodo mio agli altri
-	
+	print new_path
 	if dist_tot <= times_alpha:
 		print "Condizione alpha soddisfatta, il path col nuovo nodo va bene"
 		#se condizione alfa e' soddisfatta controllare se la condizione alfa va bene anche per
 		#il path piu' piccolo all'interno del path precedente e cosi' via
 		if (len(new_path)) > 3:
-			new_path.pop()
-			check_alpha(new_path)
-		return True
+			new_path.pop(0)
+
+			if check_alpha(new_path):
+				return True
+		else: return True
 	
+
 	else:
 		print "Condizione alpha NON soddisfatta, path da scartare"
 		return False
@@ -155,7 +158,6 @@ def check_alpha(new_path):
 #creo cluster: creo un dizionario.
 #le key sono i nodi, i value sono una lista con i nodi all'interno del raggio alpha*distanza da root
 def create_cluster():
-	print "Inizio a creare cluster!"
 	single_cluster = []
 	for key in node.items(): #scandisco tutti i nodi
 		if key[0] != 0: #salto il nodo 0
@@ -173,8 +175,6 @@ def create_cluster():
 
 #ritorna il cluster piu' grande. Ritorna lunghezza, valori cluster e id cluster. magari si puo' far ritornare meno roba
 def getMaxCluster(my_cluster):
-
-
 
     return max((len(v), v, k) for k, v in my_cluster.iteritems())
 
@@ -233,20 +233,24 @@ n, ALPHA, node = parse_dat_file(file)
 #print parameters for check
 print "n: ",n, "\n" "ALPHA: ", ALPHA, "\n\n"
 
-neighbor = node_distance() 
+neighbor = node_distance()
 
-cluster = create_cluster()
-queue = initialize_queue()
 
-pp.pprint(cluster)
 
-_, _, max_cl = getMaxCluster(cluster) #prendo solo l'ultimo elemento del return di max cluster (l'indice del cluster)
 
-initial_sol = create_path(max_cl)
+check_alpha([7,1,3,0])
 
-_, _, max_cl = getMaxCluster(cluster) #prendo solo l'ultimo elemento del return di max cluster (l'indice del cluster)
+# queue = initialize_queue()
 
-print max_cl
+# pp.pprint(cluster)
+
+# _, _, max_cl = getMaxCluster(cluster) #prendo solo l'ultimo elemento del return di max cluster (l'indice del cluster)
+
+# initial_sol = create_path(max_cl)
+
+# _, _, max_cl = getMaxCluster(cluster) #prendo solo l'ultimo elemento del return di max cluster (l'indice del cluster)
+
+# print max_cl
 
 #initial_sol = create_path(max_cl)
 ############## END BODY ##############
