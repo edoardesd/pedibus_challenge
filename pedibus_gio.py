@@ -142,12 +142,13 @@ def validate_path(path):
 	max_lenght = node_dist(path[0],path[len(path)-1])*ALPHA
 	lenght = 0
 	i = 0;
-	while i < len(path)-2:
-		lenght = lenght+node_dist(path[i],path[i+1])		
+	while i < len(path)-1:
+		lenght = lenght+node_dist(path[i],path[i+1])	
 		if lenght>max_lenght:
 			return False;
 		i=i+1
-
+	if(len(path)>2):
+		return validate_path(path[1:len(path)])
 	return True;
 
 def is_reachable(center_node, other_node):
@@ -166,54 +167,112 @@ def contains(array, element):
 			return True
 	return False
 
+def compareLists(l1, l2):
+	for i in range (len(array)):
+		if array[i] == element:
+			return True
+	return False
+
+
 def clusterize(center_node, depth):
 	paths = []
 		
 	for i in range (0,len(clusters[center_node][depth-1])):
-		c0 = center_node
-		c1 = clusters[center_node][depth-1][i]
-		c3 = c1[0:len(c1)-1]
+		old_path = clusters[center_node][depth-1][i]
 
-		for j in range (1,len(clusters[center_node][0])):
-			c2 = clusters[center_node][0][j]
+		for j in range (0,len(reachables[center_node])):
+			new_node = reachables[center_node][j]
+			if(not contains(old_path,new_node)):
+				#inserisco new_node in old_path in seconda posizione 
+				new_path = copy.copy(old_path);
+				new_path.insert(1,new_node);		
+				if(validate_path(new_path)):
+					paths.append(new_path)
 
-			if not contains(c3,c2):
-				c4 = []
-				c4 = copy.copy(c3)
-				c4.append(c2)
-				c4.append(0)
-				if validate_path(c4):
-					paths.append(c4);
-			
-	clusters[center_node][depth] = paths
+			#TROPPO DISPENDIOSO
+			#controllo se il sotto path da new_node a 0 e gia stato validato nell'iterazione precedente
+			#sub_path = new_path[1:len(new_path)]
+			#for k in range (0,len(clusters[new_node][depth-1])):
+			#	p = clusters[new_node][depth-1][k]
+			#	if(p==sub_path):
+					#se si, verifico il nuovo path
+			#		if(validate_path(new_path)):
+						#se si inserisco il nuovo path
+			#			paths.append(new_path)
+
+
 	return paths
 
 
-
-def init_cluster(center_node):
-	cluster = {};
+def init_reachables(center_node):
 	node_list = [];
 	#init reachability
-	for i in range (0,n):
+	for i in range (1,n):
 		if i!=center_node and is_reachable(center_node, i):
 			node_list.append(i)
+	return node_list
 
-	cluster[0]=node_list
+
+def init_cluster(center_node):
+	clusterZero = {};
 	node_list = [];
 	node_list.append([center_node,0]);
-	cluster[1]=node_list;
+	clusterZero[0] = node_list;
+	return clusterZero;
 
-	return cluster
 
-
-def generate_cluster(center_node):
+def generate_cluster(depth):
 	#create cluster 
 	# DEPTH
-	for i in range (2,n):
-		node_list = clusterize(center_node, i);
-		clusters[center_node][i]=node_list;
+	for i in range (1,n):
+		node_list = clusterize(i, depth);
+		clusters[i][depth]=node_list;
 
 
+
+def solve_tree():
+	i=MAX_DEPTH-1;
+	while i>=0:
+		for j in range (1,n):
+			#trova il path piu lungo
+			pathList = clusters[j][i]
+			found = False;
+			if(pathList):
+				#seleziona la prima occorrenza
+				path = pathList[0]
+				found = True;
+				solution.append(path);
+				#rimuovi tutti i path che contengono i nodi del path scelto
+				for node in path:
+					removeAllOccurrences(node)
+			if(found):
+				break;
+		i=i-1
+
+
+
+def removeAllOccurrences(node):
+	for i in range (1,n):
+		cluster=clusters[i];
+		for j in range (0,MAX_DEPTH):
+			pathList=cluster[j];
+			for path in pathList:
+				if(contains(path,node)):
+					found=True;
+					pathList.remove(path)
+
+
+def print_solution():
+	sol = {};
+	for i in range (1,(n+1)):
+		sol[i] = 0;
+
+	for path in solution:
+		for j in range(0,(len(path)-1)):
+			sol[path[j]]=path[j+1]
+
+	for k in range (1,n+1):
+		print k," ",sol[k]
 
 ############## VARIABLES ##############
 
@@ -231,6 +290,10 @@ def generate_cluster(center_node):
 #}
 clusters = {}
 
+# contiene per ogni nodo i nodi raggiungibili
+reachables = {}
+
+solution = [];
 
 #initialize dictionary for bus stop coordinates
 coord_x = {} #per coordinate x quando parso il dat
@@ -245,19 +308,35 @@ file = 'res/pedibus_10.dat'
 ############## BODY ##############
 n, ALPHA, node = parse_dat_file(file)
 
+#MAD-DEPTH -> limite di profondita con cui vendono generati i cluster per ogni nodo
+#puo andare da 1 a n, se troppo alto crasha il programma
+MAX_DEPTH = 4;
+
 #print parameters for check
 print "n: ", n, "\n" "ALPHA: ", ALPHA, "\n\n"
 
 neighbor = node_distance()
 
 for i in range (1,n+1):
+	reachables[i]=init_reachables(i);
 	clusters[i] = init_cluster(i)
+
+for i in range (1,MAX_DEPTH):
+	print "\nCalcolo CLUSTER LEVEL : ",i;
 	generate_cluster(i)
+	print "Fatto.\n";
 
-
+print "\nREACHABLES:"
+pp.pprint(reachables)
+print "\nCLUSTERS before solving:"
 pp.pprint(clusters)
 
+solve_tree()
+print "\nSOLUTION PATHS:"
+print solution
 
+print "\nSOLUTION NEXT NODES:"
+print_solution()
 
 #time
 print '\nIt took', time.time()-start, 'seconds.'
