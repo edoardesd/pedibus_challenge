@@ -126,18 +126,26 @@ def remove_zero_path(my_dict):
 	return my_dict
 
 #controlla alpha condition, new_path e' in path con anche il nuovo nodo, new_node e' il nuovo nodo
-def check_alpha(new_path, new_node):
+def check_alpha(new_path):
 
 	dist_tot = 0 #inizializzo distanza totale a zero
-	times_alpha = ALPHA*neighbor[new_node][0] #alpha + distanza di new_node da 0
+	final_leaf = neighbor[new_path[0]][0] #nodo finale del path, quello dal quale controllare la distanza
+	times_alpha = ALPHA*final_leaf #alpha + distanza di new_node da 0
 	
+	print "Leaf: ", final_leaf, "times alfa: ", times_alpha
 	for i in range (len(new_path)-1):
 		dist_tot = dist_tot + node_dist(new_path[i], new_path[i+1])
+		print dist_tot
 	
 	print "\nDistanza totale path: ", dist_tot # dist_tot distanza da il nodo mio agli altri
 	
 	if dist_tot <= times_alpha:
 		print "Condizione alpha soddisfatta, il path col nuovo nodo va bene"
+		#se condizione alfa e' soddisfatta controllare se la condizione alfa va bene anche per
+		#il path piu' piccolo all'interno del path precedente e cosi' via
+		if (len(new_path)) > 3:
+			new_path.pop()
+			check_alpha(new_path)
 		return True
 	
 	else:
@@ -176,6 +184,34 @@ def initialize_queue():
 		queue.append(i)
 
 	return queue
+
+#sbabbsbasaa
+def create_path(max_cl):
+	path = []
+	print cluster[max_cl]
+
+	#inserisco lo zero
+	path.insert(0, 0) #inserisce lo 0 (secondo param) nella posizione 0 (primo param)
+	pos = 0
+	#inserisco il primo elemento
+	path.insert(0, max_cl) #inserisce max_cl (secondo param) nella posizione 0 (primo param)
+	pos += 1
+	#parto con l'inserimento degli altri
+	c_node = cluster[max_cl][0]
+	candidate_path = list(path)
+	candidate_path.insert(pos, c_node)
+	print candidate_path
+	print "lo inserisco in pos: ", pos
+	if check_alpha(candidate_path) == True:
+		path = list(candidate_path)
+
+	print "\nPath: ", path
+
+	initial_sol[0] = path #metto il path trovato nella soluzione iniziale
+	cluster.pop(max_cl) #tolgo il cluster utilizzato
+
+	print initial_sol
+	return initial_sol
 ############## VARIABLES ##############
 
 #initialize dictionary for bus stop coordinates
@@ -185,6 +221,7 @@ neighbor = {} #ogni nodo con gli altri per distanza
 distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
 cluster = {} #cluster di ogni nodo (i nodi all'interno del raggio alpha*distanza da root)
 queue = [] #nodi non ancora assegnati
+initial_sol = {} 
 
 tree = defaultdict(list) #lista soluzioni
 
@@ -201,14 +238,17 @@ neighbor = node_distance()
 cluster = create_cluster()
 queue = initialize_queue()
 
+pp.pprint(cluster)
 
+_, _, max_cl = getMaxCluster(cluster) #prendo solo l'ultimo elemento del return di max cluster (l'indice del cluster)
 
-#pp.pprint(cluster)
+initial_sol = create_path(max_cl)
 
-print getMaxCluster(cluster)
+_, _, max_cl = getMaxCluster(cluster) #prendo solo l'ultimo elemento del return di max cluster (l'indice del cluster)
 
+print max_cl
 
-
+#initial_sol = create_path(max_cl)
 ############## END BODY ##############
 #time
 print '\nIt took', time.time()-start, 'seconds.'
