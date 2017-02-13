@@ -1,0 +1,10 @@
+model pedibus1.mod
+data pedibus_10.dat
+
+option solver cplex;
+
+solve;
+
+display distance;
+display x;
+display y;
