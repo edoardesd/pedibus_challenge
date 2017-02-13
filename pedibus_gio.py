@@ -164,7 +164,9 @@ def is_reachable(center_node, other_node):
 def contains(array, element):
 	for i in range (len(array)):
 		if array[i] == element:
+			#print array," CONTAINS ",element,"= TRUE"
 			return True
+	#print array," CONTAINS ",element,"= FALSE"
 	return False
 
 def compareLists(l1, l2):
@@ -219,6 +221,11 @@ def init_cluster(center_node):
 	node_list.append([center_node,0]);
 	clusterZero[0] = node_list;
 	return clusterZero;
+"""
+def init_risk(center_node):
+	riskZero = {};
+	risk_lisk = [];
+"""
 
 
 def generate_cluster(depth):
@@ -242,21 +249,27 @@ def solve_tree():
 				path = pathList[0]
 				found = True;
 				solution.append(path);
+				print "\n\nSelect path --->",path
 				#rimuovi tutti i path che contengono i nodi del path scelto
 				for node in path:
-					removeAllOccurrences(node)
+					if(node!=0):
+						removeAllOccurrences(node)
 			if(found):
 				break;
+
+		print "\nClusters - SOLVE ITERATION ",MAX_DEPTH-i
+		pp.pprint(clusters)
 		i=i-1
 
 
 
 def removeAllOccurrences(node):
-	for i in range (1,n):
-		cluster=clusters[i];
-		for j in range (0,MAX_DEPTH):
-			pathList=cluster[j];
-			for path in pathList:
+	for x in range (1,(n)):
+		cluster=clusters[x];
+		for y in range (0,MAX_DEPTH):
+			pathList=cluster[y];
+			pathListCopy=copy.copy(pathList)
+			for path in pathListCopy:
 				if(contains(path,node)):
 					found=True;
 					pathList.remove(path)
@@ -289,6 +302,7 @@ def print_solution():
 #		n: [...]
 #}
 clusters = {}
+risks = {}
 
 # contiene per ogni nodo i nodi raggiungibili
 reachables = {}
@@ -302,7 +316,7 @@ neighbor = {} #ogni nodo con gli altri per distanza
 distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
 tree = defaultdict(list) #lista soluzioni
 
-file = 'res/pedibus_10.dat'
+file = 'res/pedibus_20.dat'
 
 
 ############## BODY ##############
@@ -310,7 +324,7 @@ n, ALPHA, node = parse_dat_file(file)
 
 #MAD-DEPTH -> limite di profondita con cui vendono generati i cluster per ogni nodo
 #puo andare da 1 a n, se troppo alto crasha il programma
-MAX_DEPTH = 4;
+MAX_DEPTH = 5
 
 #print parameters for check
 print "n: ", n, "\n" "ALPHA: ", ALPHA, "\n\n"
@@ -318,13 +332,15 @@ print "n: ", n, "\n" "ALPHA: ", ALPHA, "\n\n"
 neighbor = node_distance()
 
 for i in range (1,n+1):
-	reachables[i]=init_reachables(i);
+	reachables[i]=init_reachables(i)
 	clusters[i] = init_cluster(i)
+	#risks[i] = init_risk()
 
 for i in range (1,MAX_DEPTH):
 	print "\nCalcolo CLUSTER LEVEL : ",i;
 	generate_cluster(i)
 	print "Fatto.\n";
+
 
 print "\nREACHABLES:"
 pp.pprint(reachables)
