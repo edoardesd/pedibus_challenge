@@ -409,6 +409,7 @@ for i in range (1,MAX_DEPTH):
 	generate_cluster(i)
 	print "Fatto.\n";
 
+time_clustering = time.time()-start
 
 print "\nREACHABLES:"
 pp.pprint(reachables)
@@ -426,5 +427,10 @@ print solution
 print "\nSOLUTION NEXT NODES:"
 print_solution()
 
+time_final = time.time()-start
+
 #time
-print '\nIt took', time.time()-start, 'seconds.'
+print '\n------------------------------------------------------'
+print '\nClustering time:', round(time_clustering,3), 'seconds.'
+print 'Solving time:', round(time_final-time_clustering,3), 'seconds.'
+print 'TOTAL time:', round(time_final,3), 'seconds.\n\n'
