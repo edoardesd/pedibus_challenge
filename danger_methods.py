@@ -43,7 +43,7 @@ def parse_dat_file(dat_file):
 	raw_y.pop(len(raw_y)-1)
 	raw_d.pop(0)
 	raw_d.pop(0)
-	raw_d.pop(len(raw_y))
+	raw_d.pop(len(raw_d)-1)
 
 	raw_d =' '.join(raw_d)
 	raw_d = raw_d.split(' ')
