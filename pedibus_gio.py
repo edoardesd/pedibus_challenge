@@ -262,7 +262,7 @@ def init_cluster(center_node):
 	node_list = [];
 	node_list.append([center_node,0]);
 	clusterZero[0] = node_list;
-	cluster_depth[center_node] = MAX_DEPTH;
+	cluster_depth[center_node] = MAX_DEPTH-1;
 	return clusterZero;
 """
 def init_risk(center_node):
@@ -283,24 +283,28 @@ def generate_cluster(depth):
 
 def solve_tree():
 	i=MAX_DEPTH-1;
+
 	while i>=0:
+		#per ogni cluster
 		for j in range (1,n):
-			#trova il path piu lungo se esiste cluster di livello i per nodo j
-			if(cluster_depth[j]-1>i):
+			#cerca il cluster di profondita i
+			#se eiste
+			if(cluster_depth[j]>i):
+				#assegna array dei path
 				pathList = clusters[j][i]
-				found = False;
+				#se esiste
 				if(pathList):
 					#seleziona la prima occorrenza
 					path = pathList[0]
-					found = True;
+					
 					solution.append(path);
 					print "\n\nSelect path --->",path
 					#rimuovi tutti i path che contengono i nodi del path scelto
 					for node in path:
 						if(node!=0):
+							print "remove all ", node, " occurrencies"
 							removeAllOccurrences(node)
-#			if(found):
-#				break;
+#			
 
 		print "\nClusters - SOLVE ITERATION ",MAX_DEPTH-i
 		pp.pprint(clusters)
@@ -309,15 +313,20 @@ def solve_tree():
 
 
 def removeAllOccurrences(node):
-	for x in range (1,(n)):
+	for x in range (1,(n+1)):
 		cluster=clusters[x];
+
 		for y in range (0,MAX_DEPTH):
-			if(cluster_depth[x]-1>y):
+
+			clusters[node][y] = []
+
+			if(cluster_depth[x]>y):
 				pathList=cluster[y];
 				pathListCopy=copy.copy(pathList)
+			
 				for path in pathListCopy:
-					if(contains(path,node)):
-						found=True;
+					if(node in path):
+						
 						pathList.remove(path)
 
 
@@ -377,11 +386,11 @@ n, ALPHA, node, danger = parse_dat_file(file)
 
 #MAD-DEPTH -> limite di profondita con cui vendono generati i cluster per ogni nodo
 #puo andare da 1 a n, se troppo alto crasha il programma
-MAX_DEPTH = 5
+MAX_DEPTH = 8
 
 #print parameters for check
 print "n: ", n, "\n" "ALPHA: ", ALPHA, "\n\n"
-pp.pprint(danger)
+#pp.pprint(danger)
 
 
 neighbor = node_distance()
@@ -410,7 +419,7 @@ pp.pprint(clusters)
 
 
 #SOLUTION
-#solve_tree()
+solve_tree()
 print "\nSOLUTION PATHS:"
 print solution
 
