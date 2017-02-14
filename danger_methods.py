@@ -1,4 +1,4 @@
-#Parsa il file, occhio che ritorna 4 valori questa volta, l'ultimo e' il danger
+#Parsa il file, occhio che ritorna 5 valori, costs è una matrice con tutti i costi
 def parse_dat_file(dat_file):
 	file_dat = np.genfromtxt(file, delimiter='\n', dtype=None)
 
@@ -10,7 +10,7 @@ def parse_dat_file(dat_file):
 	raw_x = []
 	raw_y = [] 
 	raw_d = []
-
+	costs = []
 	#start split coord x in vector raw_x and idem for y
 	for row in file_dat:
 		if "coordX" in row:
@@ -86,7 +86,12 @@ def parse_dat_file(dat_file):
 				danger.append(row)
 			row = []
 	
-   	
+	costs = [costs[:] for costs in [[0] * (n + 1)] * (n + 1)]
+
+	for i in range(0, (n+1)):
+		for j in range(0, (n+1)):
+			costs[i][j] = float("{0:.4f}".format(sqrt((coord_x[i]-coord_x[j])**2 + (coord_y[i]-coord_y[j])**2)))
+
 
 	#possibile ottimizzare le fusione in un unico dizionario, anche piu sopra
 	#merge the two dictionaries
@@ -94,7 +99,7 @@ def parse_dat_file(dat_file):
 	for k, v in chain(coord_x.items(), coord_y.items()):
     		coord[k].append(v)
 	
-	return n, ALPHA, coord, danger
+	return n, ALPHA, coord, danger, costs
 
 #calcola il pericolo di un path
 def compute_danger(my_path):
@@ -103,3 +108,14 @@ def compute_danger(my_path):
 		path_danger = path_danger + danger[my_path[i]][my_path[i+1]]
 
 	return path_danger
+
+
+#tra un vettori di path ritorna quello con meno dangerous
+def min_dangerous(paths):
+	min_danger = 9999
+	min_danger_path = []
+	for pat in paths:
+		if compute_danger(pat) < min_danger:  
+			min_danger = compute_danger(pat)
+			min_danger_path = pat
+	return min_danger_path
