@@ -292,7 +292,7 @@ def solve_tree():
 
 	while i>=0:
 		#per ogni cluster
-		for j in range (1,n):
+		for j in range (1,MAX_DEPTH):
 			#cerca il cluster di profondita i
 			#se eiste
 			if(cluster_depth[j]>i):
