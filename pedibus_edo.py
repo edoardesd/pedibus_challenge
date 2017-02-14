@@ -4,7 +4,7 @@ start = time.time() #faccio partire il tempo
 ############## IMPORT LIBRARIES ##############
 from itertools import chain
 from collections import defaultdict
-
+import copy
 import numpy as np
 import pprint as pp
 import math
@@ -23,17 +23,21 @@ def parse_dat_file(dat_file):
 
 	raw_x = []
 	raw_y = [] 
-
+	raw_d = []
+	costs = []
 	#start split coord x in vector raw_x and idem for y
 	for row in file_dat:
 		if "coordX" in row:
 			isX = True
 			isY = False
+			isD = False
 		if "coordY" in row:
 			isX = False
 			isY = True
+			isD = False
 		if "d [*,*]" in row:
 			isY = False
+			isD = True
 
 		if isX:
 			raw_x.append(" ".join(row.split()))
@@ -41,17 +45,29 @@ def parse_dat_file(dat_file):
 		if isY:
 			raw_y.append(" ".join(row.split()))
 
+		if isD: 
+			raw_d.append(" ".join(row.split()))
 
+
+	
 	#delete initial words and final semicolumn
 	raw_x.pop(0)
 	raw_x.pop(len(raw_x)-1)
 	raw_y.pop(0)
 	raw_y.pop(len(raw_y)-1)
+	raw_d.pop(0)
+	raw_d.pop(0)
+	raw_d.pop(len(raw_d)-1)
+
+	raw_d =' '.join(raw_d)
+	raw_d = raw_d.split(' ')
 
 	raw_x =' '.join(raw_x)
 	raw_x = raw_x.split(' ')
 	raw_y =' '.join(raw_y)
 	raw_y = raw_y.split(' ')
+	
+	
 
 	#transfer vector raw_x in a dictionary. key=index, value=coordX
 	i=0
@@ -73,6 +89,23 @@ def parse_dat_file(dat_file):
 
 		i = i+1
 
+	#transfer raw_d in a matrix
+	row = []
+	danger = []
+	for i in range (0, len(raw_d)+1):
+		if (i%(n+2)) != 0:
+			row.append(float(raw_d[i]))
+		else:
+			if i != 0:
+				danger.append(row)
+			row = []
+	
+	costs = [costs[:] for costs in [[0] * (n + 1)] * (n + 1)]
+
+	for i in range(0, (n+1)):
+		for j in range(0, (n+1)):
+			costs[i][j] = float("{0:.4f}".format(math.sqrt((coord_x[i]-coord_x[j])**2 + (coord_y[i]-coord_y[j])**2)))
+
 
 	#possibile ottimizzare le fusione in un unico dizionario, anche piu sopra
 	#merge the two dictionaries
@@ -80,7 +113,7 @@ def parse_dat_file(dat_file):
 	for k, v in chain(coord_x.items(), coord_y.items()):
     		coord[k].append(v)
 	
-	return n, ALPHA, coord
+	return n, ALPHA, coord, danger, costs
 
 #calcola distanza euclidea tra due nodi
 def node_dist(index_1, index_2):
@@ -212,6 +245,24 @@ def create_path(max_cl):
 
 	print initial_sol
 	return initial_sol
+
+#calcola il pericolo di un path
+def compute_danger(my_path):
+	path_danger = 0
+	for i in range(0, len(my_path)-1):
+		path_danger = path_danger + danger[my_path[i]][my_path[i+1]]
+
+	return path_danger
+
+#tra un vettori di path ritorna quello con meno dangerous
+def min_dangerous(paths):
+	min_danger = 9999
+	min_danger_path = []
+	for pat in paths:
+		if compute_danger(pat) < min_danger:  
+			min_danger = compute_danger(pat)
+			min_danger_path = pat
+	return min_danger_path
 ############## VARIABLES ##############
 
 #initialize dictionary for bus stop coordinates
@@ -228,17 +279,14 @@ tree = defaultdict(list) #lista soluzioni
 file = 'res/pedibus_10.dat'
 
 ############## BODY ##############
-n, ALPHA, node = parse_dat_file(file)
+n, ALPHA, node, danger, costs = parse_dat_file(file)
 
 #print parameters for check
-print "n: ",n, "\n" "ALPHA: ", ALPHA, "\n\n"
+print "n: ",n, "\n" "ALPHA: ", ALPHA, "\n\n", 
 
-neighbor = node_distance()
+print costs[7][2]
 
-
-
-
-check_alpha([7,1,3,0])
+paths = [[2, 3, 4, 5, 6, 0],  [2, 7, 10, 0], [2,3,4,5,6,7,8,9,0], [33, 45, 0], [0]]
 
 # queue = initialize_queue()
 

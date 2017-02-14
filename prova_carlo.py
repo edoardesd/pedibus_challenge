@@ -12,15 +12,12 @@ root = nodes[0]
 distance = [[0 for x in range(NODES)] for y in range(NODES)]
 #clusters
 neighbor = [[0 for x in range(NODES)] for y in range(NODES)]
-#vettore foglie: "1" se il corrispondente nodo è una foglia
+#vettore foglie: "1" se il corrispondente nodo e' una foglia
 leaves = [0 for x in range(NODES)]
 #vettore coda dei nodi: "1" vuol dire che deve essere preso
 queue = [1 for x in range(NODES)]
-#stampa nodi
-print ('root: ', root)
-print ('nodi: ')
-for i in range (1,len(nodes)):
-	print (nodes[i])
+
+
 
 #calcolo distanza
 def node_dist(index_1, index_2):
@@ -33,7 +30,7 @@ def node_dist(index_1, index_2):
 for i in range(0,len(nodes)):
 	for j in range(0,len(nodes)):
 		distance[i][j] = node_dist(i,j)
-print(distance)
+#print(distance)
 
 #ritorna la distanza minima di un nodo. Non considero root
 def min_dist(node):
@@ -49,7 +46,7 @@ print("mimium di 7 is :" , min_dist(7))
 per ogni nodo guardo quali altri nodi rispettano la condizione alpha rispetto a lui:
 	"1" se posso prendere quel nodo
 	"r" root (confronto inutile)
-	"self" sè stesso (confronto inutile)
+	"self" se stesso (confronto inutile)
 '''
 def alpha_condition():
 	for i in range(0,len(nodes)):
@@ -70,7 +67,7 @@ print(neighbor)
 
 def not_in_queue(index):
 	queue[index] = 0
-#numero di foglie iniziale: se la somma di neighbor[i] è 0, i non può essere collegato a niente. E' quindi una foglia
+#numero di foglie iniziale: se la somma di neighbor[i] e' 0, i non puo' essere collegato a niente. E' quindi una foglia
 def initial_leaves():
 	LEAVES = 0
 	for i in range(1,len(neighbor)):
@@ -81,7 +78,7 @@ def initial_leaves():
 		if cont == 0:
 			#aumento contatore foglie LEAVES
 			LEAVES = LEAVES + 1
-			#setto valore queue a 0. Non lo devo più prendere
+			#setto valore queue a 0. Non lo devo piu' prendere
 			not_in_queue(i)
 			#setto valore leaves a 1. E' una foglia
 			leaves[i] = 1
