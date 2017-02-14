@@ -1,4 +1,4 @@
-#Parsa il file, occhio che ritorna 5 valori, costs è una matrice con tutti i costi
+#Parsa il file, occhio che ritorna 5 valori, costs e' una matrice con tutti i costi
 def parse_dat_file(dat_file):
 	file_dat = np.genfromtxt(file, delimiter='\n', dtype=None)
 
@@ -90,7 +90,7 @@ def parse_dat_file(dat_file):
 
 	for i in range(0, (n+1)):
 		for j in range(0, (n+1)):
-			costs[i][j] = float("{0:.4f}".format(sqrt((coord_x[i]-coord_x[j])**2 + (coord_y[i]-coord_y[j])**2)))
+			costs[i][j] = float("{0:.4f}".format(math.sqrt((coord_x[i]-coord_x[j])**2 + (coord_y[i]-coord_y[j])**2)))
 
 
 	#possibile ottimizzare le fusione in un unico dizionario, anche piu sopra
