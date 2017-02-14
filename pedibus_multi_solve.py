@@ -11,19 +11,23 @@ from collections import defaultdict
 start = time.time()
 
 
-class solverThread (threading.Thread):
-	#clusters = {}
-	#first_path = []
-    def __init__(self, clustersDict, first_path):
+
+class SolverThread (threading.Thread):
+    def __init__(self, clustersDict, first_path, threadCount):
         threading.Thread.__init__(self)
         self.first_path = first_path
         self.clusters = clustersDict
+        self.threadCount = threadCount
+        self.solution = []
 
-    def run(self):
-        print "Starting " + self.name
-        print_time(self.name, self.counter, 5)
-        print "Exiting " + self.name
-
+    def run(self):	
+        self.solution=solve_thread_run(self.clusters,self.first_path, self.threadCount)
+        
+        threadLock.acquire()
+        print "\nSOLUTION thread",self.threadCount, " leaves: ",len(self.solution)
+        print self.solution
+        solutions_list.append(self.solution)
+        threadLock.release()
 
 
 ############## FUNCTION DECLARATION ##############
@@ -223,14 +227,6 @@ def is_reachable(center_node, other_node):
 		return False
 
 
-def contains(array, element):
-	for i in range (len(array)):
-		if array[i] == element:
-			#print array," CONTAINS ",element,"= TRUE"
-			return True
-	#print array," CONTAINS ",element,"= FALSE"
-	return False
-
 def compareLists(l1, l2):
 	for i in range (len(array)):
 		if array[i] == element:
@@ -261,7 +257,7 @@ def clusterize(center_node, depth):
 
 		for j in range (0,len(reachables[center_node])):
 			new_node = reachables[center_node][j]
-			if(not contains(old_path,new_node)):
+			if(not new_node in old_path):
 				#inserisco new_node in old_path in seconda posizione 
 				new_path = copy.copy(old_path);
 				new_path.insert(1,new_node);		
@@ -304,6 +300,80 @@ def generate_cluster(depth):
 
 
 
+def solve_tree_multithread():
+	i=MAX_DEPTH-1;
+	threadCount = 0;
+
+	while (i>=0 and threadCount<=MAX_THREADS):
+		#per ogni cluster
+		for j in range (1,n+1):
+			#cerca il cluster di profondita i
+			#se eiste
+			if(cluster_depth[j]>i):
+				#assegna array dei path
+				pathList = clusters[j][i]
+				#se esiste
+				if(pathList):
+					#seleziona la prima occorrenza
+					for path in pathList:
+						clusters_dict = copy.deepcopy(clusters)
+						solvingThread = SolverThread(clusters_dict,path,threadCount)
+						solvingThread.start()
+						threadCount=threadCount+1
+						threads.append(solvingThread)
+						if(threadCount>=MAX_THREADS):
+							break
+					
+					
+					
+
+		#print "\nClusters - SOLVE ITERATION ",MAX_DEPTH-i
+		#pp.pprint(clusters)
+		i=i-1
+
+
+
+def solve_thread_run(clusters_dict, first_path, threadCount):
+
+	tree_solution = []
+	#append first_path
+	tree_solution.append(first_path)
+	#remove occurrencies of first_path nodes
+	for node in first_path:
+		if(node!=0):
+			#print "remove all ", node, " occurrencies"
+			removeAllOccurrencesMulti(node,clusters_dict)
+	'''
+	threadLock.acquire()
+	print "\nTHREAD",threadCount," - SOLVE ITERATION "
+	pp.pprint(clusters_dict)
+	threadLock.release()
+	'''
+	i=MAX_DEPTH-1;
+
+	while i>=0:
+		#per ogni cluster
+		for j in range (1,n+1):
+			#cerca il cluster di profondita i
+			#se eiste
+			if(cluster_depth[j]>i):
+				#assegna array dei path
+				pathList = clusters_dict[j][i]
+				#se esiste
+				if(pathList):
+					#seleziona la prima occorrenza
+					path = pathList[0]
+					
+					tree_solution.append(path);
+					#rimuovi tutti i path che contengono i nodi del path scelto
+					for node in path:
+						if(node!=0):
+							removeAllOccurrencesMulti(node,clusters_dict)
+		i=i-1
+
+	return tree_solution
+
+
 def solve_tree():
 	i=MAX_DEPTH-1;
 
@@ -325,12 +395,12 @@ def solve_tree():
 					#rimuovi tutti i path che contengono i nodi del path scelto
 					for node in path:
 						if(node!=0):
-							print "remove all ", node, " occurrencies"
+							#print "remove all ", node, " occurrencies"
 							removeAllOccurrences(node)
 #			
 
-		print "\nClusters - SOLVE ITERATION ",MAX_DEPTH-i
-		pp.pprint(clusters)
+		#print "\nClusters - SOLVE ITERATION ",MAX_DEPTH-i
+		#pp.pprint(clusters)
 		i=i-1
 
 
@@ -352,6 +422,26 @@ def removeAllOccurrences(node):
 						
 						pathList.remove(path)
 
+
+def removeAllOccurrencesMulti(node, clusters_dict):
+	for x in range (1,(n+1)):
+		cluster=clusters_dict[x];
+
+		for y in range (0,MAX_DEPTH):
+
+			clusters_dict[node][y] = []
+
+			if(cluster_depth[x]>y):
+				pathList=cluster[y];
+				pathListCopy=copy.copy(pathList)
+			
+				for path in pathListCopy:
+					if(node in path):
+						
+						pathList.remove(path)
+
+
+
 #calcola il pericolo di un path
 def compute_danger(my_path):
 	path_danger = 0
@@ -371,6 +461,20 @@ def min_dangerous(paths):
 			min_danger_path = pat
 	return min_danger_path
 
+
+def print_solution_multi(solution):
+	sol = {};
+	for i in range (1,(n+1)):
+		sol[i] = 0;
+
+	for path in solution:
+		for j in range(0,(len(path)-1)):
+			sol[path[j]]=path[j+1]
+
+	for k in range (1,n+1):
+		print k," ",sol[k]
+
+
 def print_solution():
 	sol = {};
 	for i in range (1,(n+1)):
@@ -382,6 +486,29 @@ def print_solution():
 
 	for k in range (1,n+1):
 		print k," ",sol[k]
+
+
+def check_best_solution(final_solution,new_solution):
+	#first solution found
+	if(len(final_solution)==0):
+		final_solution=copy.deepcopy(new_solution)
+		return
+
+	#solution has less leaves
+	if(len(new_solution)<len(final_solution)):
+		final_solution=copy.deepcopy(new_solution)
+		return
+
+	#solution has same leaves
+	if(len(new_solution)<len(final_solution)):
+		#check risk
+		return
+
+def GetBestLeaves():
+	return best_leaves
+
+def SetBestLeaves(x):
+	best_leaves = x
 
 ############## VARIABLES ##############
 
@@ -409,7 +536,7 @@ cluster_depth = {}
 #contiene i nodi per i quali i cluster sono completi
 complete_clusters = []
 
-solution = [];
+solutions_list = []
 
 #initialize dictionary for bus stop coordinates
 coord_x = {} #per coordinate x quando parso il dat
@@ -419,15 +546,21 @@ distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
 danger = []
 tree = defaultdict(list) #lista soluzioni
 
-file = 'res/pedibus_20.dat'
+file = 'res/pedibus_10.dat'
 
 
 ############## BODY ##############
 n, ALPHA, node, danger, costs = parse_dat_file(file)
 
+best_leaves = n
+
 #MAD-DEPTH -> limite di profondita con cui vendono generati i cluster per ogni nodo
 #puo andare da 1 a n, se troppo alto crasha il programma
-MAX_DEPTH = 8
+MAX_DEPTH = 10
+
+MAX_THREADS = 50
+threadLock = threading.Lock()
+threads = []
 
 #print parameters for check
 print "n: ", n, "\n" "ALPHA: ", ALPHA, "\n\n"
@@ -452,26 +585,48 @@ for i in range (1,MAX_DEPTH):
 
 time_clustering = time.time()-start
 
+'''
 print "\nREACHABLES:"
 pp.pprint(reachables)
 print "\nCLUSTER DEPTHS:"
 pp.pprint(cluster_depth)
 print "\nCLUSTERS before solving:"
 pp.pprint(clusters)
-
+'''
 
 #SOLUTION
-solve_tree()
+#solve_tree()
+solve_tree_multithread()
+'''
 print "\nSOLUTION PATHS:"
 print solution
 
 print "\nSOLUTION NEXT NODES:"
 print_solution()
 
-time_final = time.time()-start
+'''
+# Wait for all threads to complete
+for t in threads:
+    t.join()
+print "Exiting Main Thread"
+
+l = n;
+final_solution = []
+for i in range (0,len(solutions_list)):
+	if(len(solutions_list[i])<l):
+		final_solution = solutions_list[i]
+		l = len(solutions_list[i])
+
+
+print '\n------------------------------------------------------'
+print '\nBEST SOLUTION LEAVES -->',len(final_solution)
+print final_solution
+print_solution_multi(final_solution)
+print '\n------------------------------------------------------'
+
 
 #time
-print '\n------------------------------------------------------'
+time_final = time.time()-start
 print '\nClustering time:', round(time_clustering,3), 'seconds.'
 print 'Solving time:', round(time_final-time_clustering,3), 'seconds.'
 print 'TOTAL time:', round(time_final,3), 'seconds.\n\n'
