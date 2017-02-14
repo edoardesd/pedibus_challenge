@@ -20,17 +20,21 @@ def parse_dat_file(dat_file):
 
 	raw_x = []
 	raw_y = [] 
+	raw_d = []
 
 	#start split coord x in vector raw_x and idem for y
 	for row in file_dat:
 		if "coordX" in row:
 			isX = True
 			isY = False
+			isD = False
 		if "coordY" in row:
 			isX = False
 			isY = True
+			isD = False
 		if "d [*,*]" in row:
 			isY = False
+			isD = True
 
 		if isX:
 			raw_x.append(" ".join(row.split()))
@@ -38,17 +42,29 @@ def parse_dat_file(dat_file):
 		if isY:
 			raw_y.append(" ".join(row.split()))
 
+		if isD: 
+			raw_d.append(" ".join(row.split()))
 
+
+	
 	#delete initial words and final semicolumn
 	raw_x.pop(0)
 	raw_x.pop(len(raw_x)-1)
 	raw_y.pop(0)
 	raw_y.pop(len(raw_y)-1)
+	raw_d.pop(0)
+	raw_d.pop(0)
+	raw_d.pop(len(raw_d)-1)
+
+	raw_d =' '.join(raw_d)
+	raw_d = raw_d.split(' ')
 
 	raw_x =' '.join(raw_x)
 	raw_x = raw_x.split(' ')
 	raw_y =' '.join(raw_y)
 	raw_y = raw_y.split(' ')
+	
+	
 
 	#transfer vector raw_x in a dictionary. key=index, value=coordX
 	i=0
@@ -70,6 +86,18 @@ def parse_dat_file(dat_file):
 
 		i = i+1
 
+	#transfer raw_d in a matrix
+	row = []
+	danger = []
+	for i in range (0, len(raw_d)+1):
+		if (i%(n+2)) != 0:
+			row.append(float(raw_d[i]))
+		else:
+			if i != 0:
+				danger.append(row)
+			row = []
+	
+   	
 
 	#possibile ottimizzare le fusione in un unico dizionario, anche piu sopra
 	#merge the two dictionaries
@@ -77,7 +105,7 @@ def parse_dat_file(dat_file):
 	for k, v in chain(coord_x.items(), coord_y.items()):
     		coord[k].append(v)
 	
-	return n, ALPHA, coord
+	return n, ALPHA, coord, danger
 
 #calcola distanza euclidea tra due nodi
 def node_dist(index_1, index_2):
@@ -148,7 +176,18 @@ def validate_path(path):
 			return False;
 		i=i+1
 	if(len(path)>2):
-		return validate_path(path[1:len(path)])
+		#check sub-path
+		sub_path = path[1:len(path)]
+		path_len = len(sub_path);
+
+		#check cluster di path[1]
+		first_node = sub_path[0]
+		first_node_cluster = clusters[first_node]
+		actual_depth = len(first_node_cluster) 
+
+		if(actual_depth<path_len-1 or (not sub_path in clusters[first_node][len(sub_path)-2])):
+			return False
+		#return validate_path(path[1:len(path)])
 	return True;
 
 def is_reachable(center_node, other_node):
@@ -178,7 +217,22 @@ def compareLists(l1, l2):
 
 def clusterize(center_node, depth):
 	paths = []
-		
+
+	node_cluster = clusters[center_node]
+	actual_depth = len(node_cluster) 
+
+	#se il cluster is completo, esci
+	if(center_node in complete_clusters):
+		print "salto nodo ", center_node
+		return paths
+
+	#se il cluster precedente non esiste, tronca ed esci
+	if(actual_depth <= depth-1):
+		print "tronco cluster per nodo", center_node
+		complete_clusters.append(center_node);
+		cluster_depth[center_node]=actual_depth
+		return paths
+
 	for i in range (0,len(clusters[center_node][depth-1])):
 		old_path = clusters[center_node][depth-1][i]
 
@@ -190,18 +244,6 @@ def clusterize(center_node, depth):
 				new_path.insert(1,new_node);		
 				if(validate_path(new_path)):
 					paths.append(new_path)
-
-			#TROPPO DISPENDIOSO
-			#controllo se il sotto path da new_node a 0 e gia stato validato nell'iterazione precedente
-			#sub_path = new_path[1:len(new_path)]
-			#for k in range (0,len(clusters[new_node][depth-1])):
-			#	p = clusters[new_node][depth-1][k]
-			#	if(p==sub_path):
-					#se si, verifico il nuovo path
-			#		if(validate_path(new_path)):
-						#se si inserisco il nuovo path
-			#			paths.append(new_path)
-
 
 	return paths
 
@@ -220,6 +262,7 @@ def init_cluster(center_node):
 	node_list = [];
 	node_list.append([center_node,0]);
 	clusterZero[0] = node_list;
+	cluster_depth[center_node] = MAX_DEPTH;
 	return clusterZero;
 """
 def init_risk(center_node):
@@ -231,9 +274,10 @@ def init_risk(center_node):
 def generate_cluster(depth):
 	#create cluster 
 	# DEPTH
-	for i in range (1,n):
+	for i in range (1,n+1):
 		node_list = clusterize(i, depth);
-		clusters[i][depth]=node_list;
+		if(len(node_list)>0):
+			clusters[i][depth]=node_list;
 
 
 
@@ -241,21 +285,22 @@ def solve_tree():
 	i=MAX_DEPTH-1;
 	while i>=0:
 		for j in range (1,n):
-			#trova il path piu lungo
-			pathList = clusters[j][i]
-			found = False;
-			if(pathList):
-				#seleziona la prima occorrenza
-				path = pathList[0]
-				found = True;
-				solution.append(path);
-				print "\n\nSelect path --->",path
-				#rimuovi tutti i path che contengono i nodi del path scelto
-				for node in path:
-					if(node!=0):
-						removeAllOccurrences(node)
-			if(found):
-				break;
+			#trova il path piu lungo se esiste cluster di livello i per nodo j
+			if(cluster_depth[j]-1>i):
+				pathList = clusters[j][i]
+				found = False;
+				if(pathList):
+					#seleziona la prima occorrenza
+					path = pathList[0]
+					found = True;
+					solution.append(path);
+					print "\n\nSelect path --->",path
+					#rimuovi tutti i path che contengono i nodi del path scelto
+					for node in path:
+						if(node!=0):
+							removeAllOccurrences(node)
+#			if(found):
+#				break;
 
 		print "\nClusters - SOLVE ITERATION ",MAX_DEPTH-i
 		pp.pprint(clusters)
@@ -267,12 +312,13 @@ def removeAllOccurrences(node):
 	for x in range (1,(n)):
 		cluster=clusters[x];
 		for y in range (0,MAX_DEPTH):
-			pathList=cluster[y];
-			pathListCopy=copy.copy(pathList)
-			for path in pathListCopy:
-				if(contains(path,node)):
-					found=True;
-					pathList.remove(path)
+			if(cluster_depth[x]-1>y):
+				pathList=cluster[y];
+				pathListCopy=copy.copy(pathList)
+				for path in pathListCopy:
+					if(contains(path,node)):
+						found=True;
+						pathList.remove(path)
 
 
 def print_solution():
@@ -307,6 +353,12 @@ risks = {}
 # contiene per ogni nodo i nodi raggiungibili
 reachables = {}
 
+#contiene per ogni nodo la profondita massima del cluster
+cluster_depth = {}
+
+#contiene i nodi per i quali i cluster sono completi
+complete_clusters = []
+
 solution = [];
 
 #initialize dictionary for bus stop coordinates
@@ -314,13 +366,14 @@ coord_x = {} #per coordinate x quando parso il dat
 coord_y = {} #per coordinate y quando parso il dat
 neighbor = {} #ogni nodo con gli altri per distanza
 distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
+danger = []
 tree = defaultdict(list) #lista soluzioni
 
 file = 'res/pedibus_20.dat'
 
 
 ############## BODY ##############
-n, ALPHA, node = parse_dat_file(file)
+n, ALPHA, node, danger = parse_dat_file(file)
 
 #MAD-DEPTH -> limite di profondita con cui vendono generati i cluster per ogni nodo
 #puo andare da 1 a n, se troppo alto crasha il programma
@@ -328,26 +381,36 @@ MAX_DEPTH = 5
 
 #print parameters for check
 print "n: ", n, "\n" "ALPHA: ", ALPHA, "\n\n"
+pp.pprint(danger)
+
 
 neighbor = node_distance()
 
+
+#INITIALIZIATION
 for i in range (1,n+1):
 	reachables[i]=init_reachables(i)
 	clusters[i] = init_cluster(i)
 	#risks[i] = init_risk()
 
+
+#CLUSTER GENERATION
 for i in range (1,MAX_DEPTH):
-	print "\nCalcolo CLUSTER LEVEL : ",i;
+	print "\nCALCOLO CLUSTER LEVEL : ",i;
 	generate_cluster(i)
 	print "Fatto.\n";
 
 
 print "\nREACHABLES:"
 pp.pprint(reachables)
+print "\nCLUSTER DEPTHS:"
+pp.pprint(cluster_depth)
 print "\nCLUSTERS before solving:"
 pp.pprint(clusters)
 
-solve_tree()
+
+#SOLUTION
+#solve_tree()
 print "\nSOLUTION PATHS:"
 print solution
 
