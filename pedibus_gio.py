@@ -10,7 +10,6 @@ from collections import defaultdict
 start = time.time()
 
 ############## FUNCTION DECLARATION ##############
-#Parsa il file, occhio che ritorna 5 valori, costs e' una matrice con tutti i costi
 def parse_dat_file(dat_file):
 	file_dat = np.genfromtxt(file, delimiter='\n', dtype=None)
 
@@ -22,7 +21,7 @@ def parse_dat_file(dat_file):
 	raw_x = []
 	raw_y = [] 
 	raw_d = []
-	costs = []
+
 	#start split coord x in vector raw_x and idem for y
 	for row in file_dat:
 		if "coordX" in row:
@@ -98,12 +97,7 @@ def parse_dat_file(dat_file):
 				danger.append(row)
 			row = []
 	
-	costs = [costs[:] for costs in [[0] * (n + 1)] * (n + 1)]
-
-	for i in range(0, (n+1)):
-		for j in range(0, (n+1)):
-			costs[i][j] = float("{0:.4f}".format(math.sqrt((coord_x[i]-coord_x[j])**2 + (coord_y[i]-coord_y[j])**2)))
-
+   	
 
 	#possibile ottimizzare le fusione in un unico dizionario, anche piu sopra
 	#merge the two dictionaries
@@ -111,12 +105,12 @@ def parse_dat_file(dat_file):
 	for k, v in chain(coord_x.items(), coord_y.items()):
     		coord[k].append(v)
 	
-	return n, ALPHA, coord, danger, costs
+	return n, ALPHA, coord, danger
 
 #calcola distanza euclidea tra due nodi
 def node_dist(index_1, index_2):
-	sub_x = math.pow((node[index_1][0] - node[index_2][0]), 2)
-	sub_y = math.pow((node[index_1][1] - node[index_2][1]), 2)
+	sub_x = math.pow(abs(node[index_1][0] - node[index_2][0]), 2)
+	sub_y = math.pow(abs(node[index_1][1] - node[index_2][1]), 2)
 	return math.sqrt(sub_x + sub_y)
 
 #crea dizionario con distanza di un nodo ad ogni altro nodo
@@ -173,11 +167,11 @@ def check_alpha(my_path, new_node):
 
 
 def validate_path(path):
-	max_lenght = costs[path[0]][path[len(path)-1]]*ALPHA
+	max_lenght = node_dist(path[0],path[len(path)-1])*ALPHA
 	lenght = 0
 	i = 0;
 	while i < len(path)-1:
-		lenght = lenght+costs[path[i]][path[i+1]]
+		lenght = lenght+node_dist(path[i],path[i+1])	
 		if lenght>max_lenght:
 			return False;
 		i=i+1
@@ -197,10 +191,10 @@ def validate_path(path):
 	return True;
 
 def is_reachable(center_node, other_node):
-	d1 = costs[center_node][0]
-	d2 = costs[other_node][0]
+	d1 = node_dist(center_node,0)
+	d2 = node_dist(other_node,0)
 
-	if costs[center_node][other_node]+d2<=d1*ALPHA:
+	if node_dist(center_node,other_node)+d2<=d1*ALPHA:
 		return True
 	else: 
 		return False
@@ -335,24 +329,6 @@ def removeAllOccurrences(node):
 						
 						pathList.remove(path)
 
-#calcola il pericolo di un path
-def compute_danger(my_path):
-	path_danger = 0
-	for i in range(0, len(my_path)-1):
-		path_danger = path_danger + danger[my_path[i]][my_path[i+1]]
-
-	return path_danger
-
-
-#tra un vettori di path ritorna quello con meno dangerous
-def min_dangerous(paths):
-	min_danger = 9999
-	min_danger_path = []
-	for pat in paths:
-		if compute_danger(pat) < min_danger:  
-			min_danger = compute_danger(pat)
-			min_danger_path = pat
-	return min_danger_path
 
 def print_solution():
 	sol = {};
@@ -406,7 +382,7 @@ file = 'res/pedibus_20.dat'
 
 
 ############## BODY ##############
-n, ALPHA, node, danger, costs = parse_dat_file(file)
+n, ALPHA, node, danger = parse_dat_file(file)
 
 #MAD-DEPTH -> limite di profondita con cui vendono generati i cluster per ogni nodo
 #puo andare da 1 a n, se troppo alto crasha il programma
@@ -417,7 +393,7 @@ print "n: ", n, "\n" "ALPHA: ", ALPHA, "\n\n"
 #pp.pprint(danger)
 
 
-#neighbor = node_distance()
+neighbor = node_distance()
 
 
 #INITIALIZIATION

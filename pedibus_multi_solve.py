@@ -5,9 +5,26 @@ import copy
 import pprint as pp
 import itertools
 import operator
+import threading
 from itertools import chain
 from collections import defaultdict
 start = time.time()
+
+
+class solverThread (threading.Thread):
+	#clusters = {}
+	#first_path = []
+    def __init__(self, clustersDict, first_path):
+        threading.Thread.__init__(self)
+        self.first_path = first_path
+        self.clusters = clustersDict
+
+    def run(self):
+        print "Starting " + self.name
+        print_time(self.name, self.counter, 5)
+        print "Exiting " + self.name
+
+
 
 ############## FUNCTION DECLARATION ##############
 #Parsa il file, occhio che ritorna 5 valori, costs e' una matrice con tutti i costi
@@ -292,7 +309,7 @@ def solve_tree():
 
 	while i>=0:
 		#per ogni cluster
-		for j in range (1,n):
+		for j in range (1,n+1):
 			#cerca il cluster di profondita i
 			#se eiste
 			if(cluster_depth[j]>i):
