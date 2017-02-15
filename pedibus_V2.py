@@ -138,7 +138,7 @@ def parse_dat_file(dat_file):
 def node_dist(index_1, index_2):
 	sub_x = math.pow((node[index_1][0] - node[index_2][0]), 2)
 	sub_y = math.pow((node[index_1][1] - node[index_2][1]), 2)
-	return round(math.sqrt(sub_x + sub_y),3)
+	return math.sqrt(sub_x + sub_y)
 
 #crea dizionario con distanza di un nodo ad ogni altro nodo
 def node_distance():
@@ -192,43 +192,6 @@ def check_alpha(my_path, new_node):
 		print "false"
 		return False
 
-
-def validate_path(path):
-	max_lenght = costs[path[0]][path[len(path)-1]]*ALPHA
-	lenght = 0
-	i = 0;
-
-	#check in validated paths
-	if(concat(path) in validated_paths):
-		return True
-
-	#validate
-	while i < len(path)-1:
-		lenght = lenght+costs[path[i]][path[i+1]]
-		if lenght>max_lenght:
-			return False;
-		i=i+1
-	
-	if(len(path)>2 and not(concat(path[1:len(path)]) in validated_paths)):
-		return False
-
-		'''
-		#check sub-path
-		sub_path = path[1:len(path)]
-		path_len = len(sub_path);
-
-		#check cluster di path[1]
-		first_node = sub_path[0]
-		first_node_cluster = clusters[first_node]
-		actual_depth = len(first_node_cluster) 
-
-		if(actual_depth<path_len-1 or (not sub_path in clusters[first_node][len(sub_path)-2])):
-			return False
-		#return validate_path(path[1:len(path)])
-		'''
-
-	validated_paths[concat(path)] = path
-	return True;
 
 def is_reachable(center_node, other_node):
 	d1 = costs[center_node][0]
@@ -288,7 +251,7 @@ def clusterize(center_node, depth):
 def concat(path):
 	key = "";
 	for i in range (0,len(path)):
-		key=key+str(path[i])
+		key=key+"-"+str(path[i])
 	return key
 
 
@@ -534,10 +497,52 @@ def init_reachable_by(node):
 	#init reachability
 	for i in range (1,n+1):
 		if i!=node and str(node) in reachables[i]:
-			reachable_by[str(i)] = node_dist(node,i)
+			reachable_by[i] = node_dist(node,i)
 			#validated_paths[concat([center_node,i])] = [center_node,i]
 	return reachable_by
 
+def check_path(old_path,new_node):
+	path_temp = copy.copy(old_path)
+	path_temp.append(new_node)
+	#controlla se old_path + new node validato
+	if(concat(path_temp) in validated_paths):
+		return True, path_temp
+
+	#TODO migliora
+	if(concat(old_path) in validated_paths):
+		dist = validated_paths[concat(old_path)]
+		dist = dist + costs[old_path[-1]][new_node]
+
+		if(dist<costs[new_node][0]*ALPHA):
+			validated_paths[concat(path_temp)] = dist
+			return True, path_temp
+
+
+	return False, old_path
+
+
+def explore_path(prec_path,my_node,index):
+	if(not is_reachable_by[my_node]):
+		basic_solution.append(prec_path)
+		return prec_path
+	prec_node = is_reachable_by[my_node][index][0]
+
+	bool_path, prec_path = check_path(prec_path, prec_node)
+	if(bool_path):
+		nodi_disponibili.remove(prec_node)
+		zero_sorted_paths.remove((prec_node,costs[prec_node][0]))
+
+		#esplora piu profondo
+		explore_path(prec_path,prec_node,0)
+	
+	else:
+		#esplora altro ramo
+		index+=1
+		if(index<len(is_reachable_by[my_node])):
+			explore_path(prec_path,my_node,index)
+		else:
+			basic_solution.append(prec_path)
+			return prec_path
 
 
 
@@ -555,8 +560,7 @@ nodi_disponibili = [];
 
 validated_paths = {}
 
-
-solutions_list = []
+basic_solution = []
 
 #initialize dictionary for bus stop coordinates
 coord_x = {} #per coordinate x quando parso il dat
@@ -617,14 +621,19 @@ current_path = [0]
 current_node = zero_sorted_paths[0][0]
 #creo current_path = [0,V]
 current_path.append(current_node)
+
+validated_paths[concat(current_path)] = costs[current_node][0]
+print zero_sorted_paths
 #rimuovo V dai nodi_disponibili
 nodi_disponibili.remove(current_node)
+zero_sorted_paths.remove((current_node,costs[current_node][0]))
 
-print current_path
+p = explore_path(current_path,current_node,0)
+pp.pprint(p)
+
+print basic_solution
 print nodi_disponibili
-
-current_node = is_reachable_by[current_node][0][0]
-print current_node
+print zero_sorted_paths
 
 #per ogni nodo che contiene V si prende il piu vicino U
 #controllo U-V-0
