@@ -197,12 +197,22 @@ def validate_path(path):
 	max_lenght = costs[path[0]][path[len(path)-1]]*ALPHA
 	lenght = 0
 	i = 0;
+
+	#check in validated paths
+	if(concat(path) in validated_paths):
+		return True
+
+	#validate
 	while i < len(path)-1:
 		lenght = lenght+costs[path[i]][path[i+1]]
 		if lenght>max_lenght:
 			return False;
 		i=i+1
-	if(len(path)>2):
+	
+	if(len(path)>2 and not(concat(path[1:len(path)]) in validated_paths)):
+		return False
+
+		'''
 		#check sub-path
 		sub_path = path[1:len(path)]
 		path_len = len(sub_path);
@@ -215,13 +225,16 @@ def validate_path(path):
 		if(actual_depth<path_len-1 or (not sub_path in clusters[first_node][len(sub_path)-2])):
 			return False
 		#return validate_path(path[1:len(path)])
+		'''
+
+	validated_paths[concat(path)] = path
 	return True;
 
 def is_reachable(center_node, other_node):
 	d1 = costs[center_node][0]
 	d2 = costs[other_node][0]
 
-	if costs[center_node][other_node]+d2<=d1*ALPHA:
+	if costs[center_node][other_node]+d2<=d1*ALPHA*BETA:
 		return True
 	else: 
 		return False
@@ -236,6 +249,7 @@ def compareLists(l1, l2):
 
 def clusterize(center_node, depth):
 	paths = []
+	orphan_reachables = copy.copy(reachables[center_node])
 
 	node_cluster = clusters[center_node]
 	actual_depth = len(node_cluster) 
@@ -255,7 +269,9 @@ def clusterize(center_node, depth):
 	for i in range (0,len(clusters[center_node][depth-1])):
 		old_path = clusters[center_node][depth-1][i]
 
-		for j in range (0,len(reachables[center_node])):
+		#for j in range (0,len(reachables[center_node])):
+		for j in reachables[center_node]:
+			#new_node = reachables[center_node][j]
 			new_node = reachables[center_node][j]
 			if(not new_node in old_path):
 				#inserisco new_node in old_path in seconda posizione 
@@ -263,16 +279,28 @@ def clusterize(center_node, depth):
 				new_path.insert(1,new_node);		
 				if(validate_path(new_path)):
 					paths.append(new_path)
+					orphan_reachables.pop(str(j), None)
 
+	reachables[center_node] = { k : reachables[center_node][k] for k in set(reachables[center_node]) - set(orphan_reachables) }
 	return paths
 
 
+def concat(path):
+	key = "";
+	for i in range (0,len(path)):
+		key=key+str(path[i])
+	return key
+
+
+## INIT ##
+
 def init_reachables(center_node):
-	node_list = [];
+	node_list = {};
 	#init reachability
 	for i in range (1,n):
 		if i!=center_node and is_reachable(center_node, i):
-			node_list.append(i)
+			node_list[str(i)] = i
+			validated_paths[concat([center_node,i])] = [center_node,i]
 	return node_list
 
 
@@ -280,14 +308,10 @@ def init_cluster(center_node):
 	clusterZero = {};
 	node_list = [];
 	node_list.append([center_node,0]);
+	validated_paths[concat([center_node,0])] = [center_node,0]
 	clusterZero[0] = node_list;
 	cluster_depth[center_node] = MAX_DEPTH-1;
 	return clusterZero;
-"""
-def init_risk(center_node):
-	riskZero = {};
-	risk_lisk = [];
-"""
 
 
 def generate_cluster(depth):
@@ -303,7 +327,6 @@ def generate_cluster(depth):
 def solve_tree_multithread():
 	i=MAX_DEPTH-1;
 	threadCount = 0;
-
 	while (i>=0 and threadCount<=MAX_THREADS):
 		#per ogni cluster
 		for j in range (1,n+1):
@@ -330,9 +353,9 @@ def solve_tree_multithread():
 		#print "\nClusters - SOLVE ITERATION ",MAX_DEPTH-i
 		#pp.pprint(clusters)
 		i=i-1
-	threadLock.acquire()
-	print "THREAD COUNT: ",threadCount
-	threadLock.release()
+	print "RISOLUZIONE COMPLETATA con",threadCount,"thread risolutori.\n\n"
+
+
 
 def solve_thread_run(clusters_dict, first_path, threadCount):
 
@@ -398,12 +421,7 @@ def solve_tree():
 						if(node!=0):
 							#print "remove all ", node, " occurrencies"
 							removeAllOccurrences(node)
-#			
-
-		#print "\nClusters - SOLVE ITERATION ",MAX_DEPTH-i
-		#pp.pprint(clusters)
 		i=i-1
-
 
 
 def removeAllOccurrences(node):
@@ -505,11 +523,6 @@ def check_best_solution(final_solution,new_solution):
 		#check risk
 		return
 
-def GetBestLeaves():
-	return best_leaves
-
-def SetBestLeaves(x):
-	best_leaves = x
 
 ############## VARIABLES ##############
 
@@ -530,6 +543,7 @@ risks = {}
 
 # contiene per ogni nodo i nodi raggiungibili
 reachables = {}
+validated_paths = {}
 
 #contiene per ogni nodo la profondita massima del cluster
 cluster_depth = {}
@@ -547,17 +561,18 @@ distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
 danger = []
 tree = defaultdict(list) #lista soluzioni
 
-file = 'res/pedibus_20.dat'
+file = 'res/pedibus_30.dat'
 
 
 ############## BODY ##############
 n, ALPHA, node, danger, costs = parse_dat_file(file)
 
+BETA = 1
 best_leaves = n
 
 #MAD-DEPTH -> limite di profondita con cui vendono generati i cluster per ogni nodo
 #puo andare da 1 a n, se troppo alto crasha il programma
-MAX_DEPTH = 6
+MAX_DEPTH = 10
 
 MAX_THREADS = 300
 threadLock = threading.Lock()
@@ -586,18 +601,16 @@ for i in range (1,MAX_DEPTH):
 
 time_clustering = time.time()-start
 
-'''
-print "\nREACHABLES:"
-pp.pprint(reachables)
-print "\nCLUSTER DEPTHS:"
-pp.pprint(cluster_depth)
-print "\nCLUSTERS before solving:"
-pp.pprint(clusters)
-'''
+
+#print "\nCLUSTERS before solving:"
+#pp.pprint(clusters)
+
 
 #SOLUTION
+print "\nRICERCA SOLUZIONE MIGLIORE IN CORSO....\n";
 #solve_tree()
-solve_tree_multithread()
+#solve_tree_multithread()
+
 '''
 print "\nSOLUTION PATHS:"
 print solution
@@ -609,7 +622,7 @@ print_solution()
 # Wait for all threads to complete
 for t in threads:
     t.join()
-print "Exiting Main Thread"
+
 
 l = n;
 final_solution = []
