@@ -138,7 +138,7 @@ def parse_dat_file(dat_file):
 def node_dist(index_1, index_2):
 	sub_x = math.pow((node[index_1][0] - node[index_2][0]), 2)
 	sub_y = math.pow((node[index_1][1] - node[index_2][1]), 2)
-	return math.sqrt(sub_x + sub_y)
+	return round(math.sqrt(sub_x + sub_y),3)
 
 #crea dizionario con distanza di un nodo ad ogni altro nodo
 def node_distance():
@@ -234,7 +234,7 @@ def is_reachable(center_node, other_node):
 	d1 = costs[center_node][0]
 	d2 = costs[other_node][0]
 
-	if costs[center_node][other_node]+d2<=d1*ALPHA*BETA:
+	if costs[center_node][other_node]+d2<=d1*ALPHA:
 		return True
 	else: 
 		return False
@@ -293,15 +293,6 @@ def concat(path):
 
 
 ## INIT ##
-
-def init_reachables(center_node):
-	node_list = {};
-	#init reachability
-	for i in range (1,n+1):
-		if i!=center_node and is_reachable(center_node, i):
-			node_list[str(i)] = i
-			validated_paths[concat([center_node,i])] = [center_node,i]
-	return node_list
 
 
 def init_cluster(center_node):
@@ -524,32 +515,46 @@ def check_best_solution(final_solution,new_solution):
 		return
 
 
+
+### METODI NUOVI ###
+
+#def create_basic_solution():
+
+def init_reachables(center_node):
+	node_list = {};
+	#init reachability
+	for i in range (1,n+1):
+		if i!=center_node and is_reachable(center_node, i):
+			node_list[str(i)] = node_dist(center_node,i)
+			#validated_paths[concat([center_node,i])] = [center_node,i]
+	return node_list
+
+def init_reachable_by(node):
+	reachable_by = {};
+	#init reachability
+	for i in range (1,n+1):
+		if i!=node and str(node) in reachables[i]:
+			reachable_by[str(i)] = node_dist(node,i)
+			#validated_paths[concat([center_node,i])] = [center_node,i]
+	return reachable_by
+
+
+
+
 ############## VARIABLES ##############
 
-#CLUSTERS contiene un oggetto per ogni nodo X
-#all'interno di ogni oggetto c'e un array [i] che contiere i path possibili da X a 0 in [i] spostamenti
-#gia ALPHA validati
-#
-#	X: {0: [0], 					     // elementi raggiungibili
-#		1: [[2,0]] 						 // path possibili con 1 spostamento
-#		2: [[2,4,0],[2,8,0],[2,9,0]]  	 // path possibili con 2 spostamenti
-#		3: [[2,4,8,0] ... ]   			 // path possibili con 3 spostamenti
-#		.
-#		.
-#		n: [...]
-#}
-clusters = {}
 risks = {}
 
 # contiene per ogni nodo i nodi raggiungibili
+zero_paths = {}
+zero_sorted_paths = []
 reachables = {}
+is_reachable_by = {}
+
+nodi_disponibili = [];
+
 validated_paths = {}
 
-#contiene per ogni nodo la profondita massima del cluster
-cluster_depth = {}
-
-#contiene i nodi per i quali i cluster sono completi
-complete_clusters = []
 
 solutions_list = []
 
@@ -567,7 +572,6 @@ file = 'res/pedibus_10.dat'
 ############## BODY ##############
 n, ALPHA, node, danger, costs = parse_dat_file(file)
 
-BETA = 1
 best_leaves = n
 
 #MAD-DEPTH -> limite di profondita con cui vendono generati i cluster per ogni nodo
@@ -583,64 +587,61 @@ print "n: ", n, "\n" "ALPHA: ", ALPHA, "\n\n"
 #pp.pprint(danger)
 
 
-#neighbor = node_distance()
-
-
-#INITIALIZIATION
+#INIZIALIZZA REACHABLES // ZERO PATHS // NODI DISP
 for i in range (1,n+1):
 	reachables[i]=init_reachables(i)
-	clusters[i] = init_cluster(i)
-	#risks[i] = init_risk()
+	zero_paths[i] = costs[i][0]
+	nodi_disponibili.append(i)
+
+#INIZIALIZZA ZERO PATHS
+zero_sorted_paths = sorted(zero_paths.items(), key=operator.itemgetter(1))
+
+#INIZIALIZZA IS_REACHABLE_BY
+for i in range (1,n+1):
+	x = init_reachable_by(i)
+	is_reachable_by[i] = sorted(x.items(), key=operator.itemgetter(1))
 
 
-#CLUSTER GENERATION
-for i in range (1,MAX_DEPTH):
-	print "\nCALCOLO CLUSTER LEVEL : ",i;
-	generate_cluster(i)
-	print "Fatto.\n";
 
-time_clustering = time.time()-start
+print nodi_disponibili
+#pp.pprint(reachables)
+#pp.pprint(is_reachable_by)
 
 
-#print "\nCLUSTERS before solving:"
-#pp.pprint(clusters)
+#local_solution = []
+#nodi_disp = [1...n]
 
 
-#SOLUTION
-print "\nRICERCA SOLUZIONE MIGLIORE IN CORSO....\n";
-#solve_tree()
-solve_tree_multithread()
+current_path = [0]
+#prendi il piu vicino V a zero
+current_node = zero_sorted_paths[0][0]
+#creo current_path = [0,V]
+current_path.append(current_node)
+#rimuovo V dai nodi_disponibili
+nodi_disponibili.remove(current_node)
 
-'''
-print "\nSOLUTION PATHS:"
-print solution
+print current_path
+print nodi_disponibili
 
-print "\nSOLUTION NEXT NODES:"
-print_solution()
+current_node = is_reachable_by[current_node][0][0]
+print current_node
 
-'''
-# Wait for all threads to complete
-for t in threads:
-    t.join()
-
-
-l = n;
-final_solution = []
-for i in range (0,len(solutions_list)):
-	if(len(solutions_list[i])<l):
-		final_solution = solutions_list[i]
-		l = len(solutions_list[i])
+#per ogni nodo che contiene V si prende il piu vicino U
+#controllo U-V-0
+	#se path ok:
+		#aggiorno current_path
+		#rimuovo U dai nodi_disponibili
+	#se path non ok: 
 
 
-print '\n------------------------------------------------------'
-print '\nBEST SOLUTION LEAVES -->',len(final_solution)
-print final_solution
-print_solution_multi(final_solution)
-print '\n------------------------------------------------------'
+#per ogni nodo che contiene U prendo il piu vicino K
+#controllo K-U-V-0
+	#se si
+#rimuovo U dai nodi_disponibili
+
+#per ogni nodo 
 
 
 #time
 time_final = time.time()-start
-print '\nClustering time:', round(time_clustering,3), 'seconds.'
-print 'Solving time:', round(time_final-time_clustering,3), 'seconds.'
 print 'TOTAL time:', round(time_final,3), 'seconds.\n\n'
