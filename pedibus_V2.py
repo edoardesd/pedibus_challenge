@@ -13,23 +13,44 @@ start = time.time()
 
 
 class SolverThread (threading.Thread):
-    def __init__(self, clustersDict, first_path, threadCount):
+    def __init__(self, nodeDisp, zeroSort, threadCount):
         threading.Thread.__init__(self)
-        self.first_path = first_path
-        self.clusters = clustersDict
+        self.nodeDisp = nodeDisp
+        self.zeroSort = zeroSort
         self.threadCount = threadCount
-        self.solution = []
+        self.threadSolution = []
+        self.threadLeaves = n 
+        self.currentPath = []
+        self.currNode = threadCount
+
 
     def run(self):	
-        self.solution=solve_thread_run(self.clusters,self.first_path, self.threadCount)
+        #self.threadSolution=solve_thread_run(self.clusters,self.first_path, self.threadCount)
         
-        threadLock.acquire()
-        print "\nSOLUTION thread",self.threadCount, " leaves: ",len(self.solution)
-        print self.solution
-        solutions_list.append(self.solution)
-        threadLock.release()
+		test(self.currentPath, self.currNode, self.threadSolution, self.nodeDisp, self.zeroSort, self.threadCount)      
+		threadLock.acquire()
+		if len(threadSolution) <= BEST_LEAVES:
+			BEST_LEAVES = len(threadSolution)
+			BEST_SOL = threadSolution
+		threadLock.release()
 
 
+def test(currentPath,currNode, threadSolution, nodeDisp, zeroSort, threadCount):
+	tIndex = threadCount
+	while (len(zeroSort) > 0 and len(threadSolution)<=BEST_LEAVES):
+		currentPath = [0]
+		#prendi il piu vicino V a zero
+		currNode = zeroSort[tIndex][0]
+		tIndex = 0
+		#creo current_path = [0,V]
+		currentPath.append(currNode)
+		validated_paths[concat(currentPath)] = costs[currNode][0]
+		#rimuovo V dai nodi_disponibili
+		nodeDisp.remove(currNode)
+		zeroSort.remove((currNode,costs[currNode][0]))
+
+
+		explore_thread(currentPath,currNode,0, threadSolution, nodeDisp, zeroSort)
 ############## FUNCTION DECLARATION ##############
 #Parsa il file, occhio che ritorna 5 valori, costs e' una matrice con tutti i costi
 def parse_dat_file(dat_file):
@@ -520,12 +541,57 @@ def check_path(old_path,new_node):
 
 	return False, old_path
 
+def explore_thread(prec_path,my_node,index, threadSolution, nodeDisp, zeroSort):
+	if(not is_reachable_by[my_node]):
+		threadSolution.append(prec_path)
+		return prec_path
+	
+	check_node = is_reachable_by[my_node][index][0]
+	if check_node in nodeDisp:
+		prec_node = check_node
+
+	else: 
+		index+=1
+		if(index<len(is_reachable_by[my_node])):
+			return explore_thread(prec_path,my_node,index, threadSolution, nodeDisp, zeroSort)
+		else:
+			threadSolution.append(prec_path)
+			return prec_path
+
+	bool_path, prec_path = check_path(prec_path, prec_node)
+	if(bool_path):
+		nodi_disponibili.remove(prec_node)
+		zeroSort.remove((prec_node,costs[prec_node][0]))
+
+		#esplora piu profondo
+		return explore_thread(prec_path,prec_node,0, threadSolution, nodeDisp, zeroSort)
+	
+	else:
+		#esplora altro ramo
+		index+=1
+		if(index<len(is_reachable_by[my_node])):
+			return explore_path(prec_path,my_node,index, threadSolution, nodeDisp, zeroSort)
+		else:
+			threadSolution.append(prec_path)
+			return prec_path
+
 
 def explore_path(prec_path,my_node,index):
 	if(not is_reachable_by[my_node]):
 		basic_solution.append(prec_path)
 		return prec_path
-	prec_node = is_reachable_by[my_node][index][0]
+	
+	check_node = is_reachable_by[my_node][index][0]
+	if check_node in nodi_disponibili:
+		prec_node = check_node
+
+	else: 
+		index+=1
+		if(index<len(is_reachable_by[my_node])):
+			return explore_path(prec_path,my_node,index)
+		else:
+			basic_solution.append(prec_path)
+			return prec_path
 
 	bool_path, prec_path = check_path(prec_path, prec_node)
 	if(bool_path):
@@ -533,22 +599,39 @@ def explore_path(prec_path,my_node,index):
 		zero_sorted_paths.remove((prec_node,costs[prec_node][0]))
 
 		#esplora piu profondo
-		explore_path(prec_path,prec_node,0)
+		return explore_path(prec_path,prec_node,0)
 	
 	else:
 		#esplora altro ramo
 		index+=1
 		if(index<len(is_reachable_by[my_node])):
-			explore_path(prec_path,my_node,index)
+			return explore_path(prec_path,my_node,index)
 		else:
 			basic_solution.append(prec_path)
 			return prec_path
 
 
+def print_solution_vertical(solution):
+	sol = {};
+	for i in range (1,(n+1)):
+		sol[i] = 0;
 
+	for path in solution:
+		for j in range(0,(len(path)-1)):
+			sol[path[j]]=path[j+1]
+
+	for k in range (1,n+1):
+		print k," ",sol[k]
+
+
+def compute_danger_sol(my_sol):
+	total_danger = 0
+	for s_path in my_sol:
+		total_danger = total_danger + compute_danger(s_path)
+
+	return total_danger
 ############## VARIABLES ##############
 
-risks = {}
 
 # contiene per ogni nodo i nodi raggiungibili
 zero_paths = {}
@@ -565,8 +648,6 @@ basic_solution = []
 #initialize dictionary for bus stop coordinates
 coord_x = {} #per coordinate x quando parso il dat
 coord_y = {} #per coordinate y quando parso il dat
-neighbor = {} #ogni nodo con gli altri per distanza
-distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
 danger = []
 tree = defaultdict(list) #lista soluzioni
 
@@ -576,11 +657,10 @@ file = 'res/pedibus_10.dat'
 ############## BODY ##############
 n, ALPHA, node, danger, costs = parse_dat_file(file)
 
-best_leaves = n
+BEST_LEAVES = n
+BEST_RISK = 9999
+BEST_SOL = []
 
-#MAD-DEPTH -> limite di profondita con cui vendono generati i cluster per ogni nodo
-#puo andare da 1 a n, se troppo alto crasha il programma
-MAX_DEPTH = 10
 
 MAX_THREADS = 300
 threadLock = threading.Lock()
@@ -616,24 +696,90 @@ print nodi_disponibili
 #nodi_disp = [1...n]
 
 
-current_path = [0]
-#prendi il piu vicino V a zero
-current_node = zero_sorted_paths[0][0]
-#creo current_path = [0,V]
-current_path.append(current_node)
+while (len(zero_sorted_paths) > 0 and len(basic_solution)<=BEST_LEAVES):
+	current_path = [0]
+	#prendi il piu vicino V a zero
+	current_node = zero_sorted_paths[0][0]
 
-validated_paths[concat(current_path)] = costs[current_node][0]
-print zero_sorted_paths
-#rimuovo V dai nodi_disponibili
-nodi_disponibili.remove(current_node)
-zero_sorted_paths.remove((current_node,costs[current_node][0]))
+	print zero_sorted_paths
+	#creo current_path = [0,V]
+	current_path.append(current_node)
 
-p = explore_path(current_path,current_node,0)
-pp.pprint(p)
+	validated_paths[concat(current_path)] = costs[current_node][0]
+	#rimuovo V dai nodi_disponibili
+	nodi_disponibili.remove(current_node)
+	zero_sorted_paths.remove((current_node,costs[current_node][0]))
 
-print basic_solution
-print nodi_disponibili
-print zero_sorted_paths
+
+	explore_path(current_path,current_node,0)
+
+BEST_SOL = basic_solution
+####################
+
+
+
+
+
+
+for i in range (1, n+1):
+	for sol in basic_solution:
+		sol.reverse()
+
+	if (len(basic_solution)<BEST_LEAVES):
+		BEST_SOL = copy.deepcopy(basic_solution)
+		BEST_LEAVES = len(BEST_SOL)
+	BEST_RISK = compute_danger_sol(basic_solution)
+	print "SOL:", BEST_SOL, "LEAVES ", BEST_LEAVES, " Risk: ", BEST_RISK
+	
+	node_after = i
+	for i in range (1,n+1):
+		nodi_disponibili.append(i)
+
+	basic_solution = []
+	zero_sorted_paths = sorted(zero_paths.items(), key=operator.itemgetter(1))
+	while (len(zero_sorted_paths) > 0 and len(basic_solution)<=BEST_LEAVES):
+		current_path = [0]
+		#prendi il piu vicino V a zero
+		current_node = zero_sorted_paths[0][0]
+		node_after = 0
+		#creo current_path = [0,V]
+		current_path.append(current_node)
+
+		validated_paths[concat(current_path)] = costs[current_node][0]
+		#rimuovo V dai nodi_disponibili
+		nodi_disponibili.remove(current_node)
+		zero_sorted_paths.remove((current_node,costs[current_node][0]))
+
+
+	explore_path(current_path,current_node,0)
+
+
+
+
+for i in range (1,n+1):
+	nodi_disponibili.append(i)
+
+zero_sorted_paths = sorted(zero_paths.items(), key=operator.itemgetter(1))
+
+
+
+
+# for i in range(1, n+1):
+# 	nodeDisp = copy.deepcopy(nodi_disponibili)
+# 	zeroSort = copy.deepcopy(zero_sorted_paths)
+# 	solvingThread = SolverThread(nodeDisp, zeroSort, i)
+# 	solvingThread.start()
+# 	threadCount=threadCount+1
+# 	threads.append(solvingThread)
+# 	if(threadCount>=MAX_THREADS):
+# 		break
+
+
+
+
+
+
+
 
 #per ogni nodo che contiene V si prende il piu vicino U
 #controllo U-V-0
@@ -649,7 +795,7 @@ print zero_sorted_paths
 #rimuovo U dai nodi_disponibili
 
 #per ogni nodo 
-
+print_solution_vertical(basic_solution)
 
 #time
 time_final = time.time()-start
