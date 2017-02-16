@@ -186,10 +186,9 @@ def concat(path):
 def compute_danger(my_path):
 	path_danger = 0
 	for i in range(0, len(my_path)-1):
-		path_danger = path_danger + danger[my_path[i]][my_path[i+1]]
+		path_danger = path_danger + danger[my_path[i+1]][my_path[i]]
 
 	return path_danger
-
 
 ### METODI NUOVI ###
 
@@ -302,8 +301,11 @@ def explore_path(prec_path,my_node,index):
 
 def print_solution_vertical(solution):
 	sol = {};
+	for pat in solution:
+		pat.reverse()
+	
 	for i in range (1,(n+1)):
-		sol[i] = 0;
+		sol[i] = 0
 
 	for path in solution:
 		for j in range(0,(len(path)-1)):
@@ -384,7 +386,6 @@ while (len(zero_sorted_paths) > 0 and len(basic_solution)<=BEST_LEAVES):
 	#prendi il piu vicino V a zero
 	current_node = zero_sorted_paths[0][0]
 
-	print zero_sorted_paths
 	#creo current_path = [0,V]
 	current_path.append(current_node)
 
@@ -396,17 +397,11 @@ while (len(zero_sorted_paths) > 0 and len(basic_solution)<=BEST_LEAVES):
 
 	explore_path(current_path,current_node,0)
 
-BEST_SOL = basic_solution
+
+BEST_SOL = copy.deepcopy(basic_solution)
 ####################
 
 
-
-
-
-
-# for i in range (1, n+1):
-# 	for sol in basic_solution:
-# 		sol.reverse()
 
 # 	if (len(basic_solution)<BEST_LEAVES):
 # 		BEST_SOL = copy.deepcopy(basic_solution)
@@ -438,15 +433,17 @@ BEST_SOL = basic_solution
 
 
 
-
 for i in range (1,n+1):
 	nodi_disponibili.append(i)
 
 zero_sorted_paths = sorted(zero_paths.items(), key=operator.itemgetter(1))
 
 
+print BEST_SOL
+
+print compute_danger_sol(basic_solution)
 #per ogni nodo 
-print_solution_vertical(basic_solution)
+print_solution_vertical(BEST_SOL)
 
 #time
 time_final = time.time()-start
