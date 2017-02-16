@@ -3,7 +3,6 @@ import time
 import math
 import copy
 import pprint as pp
-import itertools
 import operator
 import threading
 from itertools import chain
@@ -11,7 +10,7 @@ from collections import defaultdict
 start = time.time()
 
 
-
+############# THREAD #################
 class SolverThread (threading.Thread):
     def __init__(self, nodeDisp, zeroSort, threadCount):
         threading.Thread.__init__(self)
@@ -51,6 +50,8 @@ def test(currentPath,currNode, threadSolution, nodeDisp, zeroSort, threadCount):
 
 
 		explore_thread(currentPath,currNode,0, threadSolution, nodeDisp, zeroSort)
+
+
 ############## FUNCTION DECLARATION ##############
 #Parsa il file, occhio che ritorna 5 valori, costs e' una matrice con tutti i costi
 def parse_dat_file(dat_file):
@@ -161,59 +162,6 @@ def node_dist(index_1, index_2):
 	sub_y = math.pow((node[index_1][1] - node[index_2][1]), 2)
 	return math.sqrt(sub_x + sub_y)
 
-#crea dizionario con distanza di un nodo ad ogni altro nodo
-def node_distance():
-	for key1, value1 in node.items():
-		distance.clear()
-		for key2, value2 in node.items():
-			if key1 != key2:
-				distance[key2] = node_dist(key1, key2)
-				neighbor[key1] = distance.copy()
-
-	return neighbor
-
-#popola l'albero della soluzione con la soluzione base
-def create_starting_solution():
-	for i in range(1,n+1):
-			tree[i].append(i)
-			tree[i].append(0)
-
-	return tree
-
-#eliminare il nodo myNode
-def delete_node(myNode):
-	for i in range (1, len(tree)+1):
-		if myNode in tree[i]: 
-			tree[i].remove(myNode)
-
-#rimuovere nodi solo con 0
-def remove_zero_path(my_dict):
-	bool_elim = False
-	for i in range(1, len(my_dict)+1):
-		if len(my_dict[i]) == 1:
-			bool_elim = True
-			elim = i
-
-	if bool_elim:
-		del my_dict[elim]
-	return my_dict
-
-#controlla alpha condition
-def check_alpha(my_path, new_node):
-	tot_dist = 0 #inizializzo distanza totale a zero
-	times_alpha = ALPHA*neighbor[new_node][0] #alpha + distanza di new_node da 0
-	print "blblba ",times_alpha, neighbor[new_node][0]
-	for i in range (len(my_path)-1):
-		tot_dist = tot_dist + node_dist(my_path[i], my_path[i+1])
-		print "\nDistanza totale path: ", tot_dist + neighbor[new_node][0] #ATTENZIONEEEEE, distanza da il nodo mio agli altri
-	if tot_dist + neighbor[new_node][0] <= times_alpha:
-		print "true"
-		return True
-	else:
-		print "false"
-		return False
-
-
 def is_reachable(center_node, other_node):
 	d1 = costs[center_node][0]
 	d2 = costs[other_node][0]
@@ -224,51 +172,6 @@ def is_reachable(center_node, other_node):
 		return False
 
 
-def compareLists(l1, l2):
-	for i in range (len(array)):
-		if array[i] == element:
-			return True
-	return False
-
-
-def clusterize(center_node, depth):
-	paths = []
-	orphan_reachables = copy.copy(reachables[center_node])
-
-	node_cluster = clusters[center_node]
-	actual_depth = len(node_cluster) 
-
-	#se il cluster is completo, esci
-	if(center_node in complete_clusters):
-		print "salto nodo ", center_node
-		return paths
-
-	#se il cluster precedente non esiste, tronca ed esci
-	if(actual_depth <= depth-1):
-		print "tronco cluster per nodo", center_node
-		complete_clusters.append(center_node);
-		cluster_depth[center_node]=actual_depth
-		return paths
-
-	for i in range (0,len(clusters[center_node][depth-1])):
-		old_path = clusters[center_node][depth-1][i]
-
-		#for j in range (0,len(reachables[center_node])):
-		for j in reachables[center_node]:
-			#new_node = reachables[center_node][j]
-			new_node = reachables[center_node][j]
-			if(not new_node in old_path):
-				#inserisco new_node in old_path in seconda posizione 
-				new_path = copy.copy(old_path);
-				new_path.insert(1,new_node);		
-				if(validate_path(new_path)):
-					paths.append(new_path)
-					orphan_reachables.pop(str(j), None)
-
-	reachables[center_node] = { k : reachables[center_node][k] for k in set(reachables[center_node]) - set(orphan_reachables) }
-	return paths
-
-
 def concat(path):
 	key = "";
 	for i in range (0,len(path)):
@@ -276,163 +179,6 @@ def concat(path):
 	return key
 
 
-## INIT ##
-
-
-def init_cluster(center_node):
-	clusterZero = {};
-	node_list = [];
-	node_list.append([center_node,0]);
-	validated_paths[concat([center_node,0])] = [center_node,0]
-	clusterZero[0] = node_list;
-	cluster_depth[center_node] = MAX_DEPTH-1;
-	return clusterZero;
-
-
-def generate_cluster(depth):
-	#create cluster 
-	# DEPTH
-	for i in range (1,n+1):
-		node_list = clusterize(i, depth);
-		if(len(node_list)>0):
-			clusters[i][depth]=node_list;
-
-
-
-def solve_tree_multithread():
-	i=MAX_DEPTH-1;
-	threadCount = 0;
-	while (i>=0 and threadCount<=MAX_THREADS):
-		#per ogni cluster
-		for j in range (1,n+1):
-			#cerca il cluster di profondita i
-			#se eiste
-			if(cluster_depth[j]>i):
-				#assegna array dei path
-				pathList = clusters[j][i]
-				#se esiste
-				if(pathList):
-					#seleziona la prima occorrenza
-					for path in pathList:
-						clusters_dict = copy.deepcopy(clusters)
-						solvingThread = SolverThread(clusters_dict,path,threadCount)
-						solvingThread.start()
-						threadCount=threadCount+1
-						threads.append(solvingThread)
-						if(threadCount>=MAX_THREADS):
-							break
-					
-					
-					
-
-		#print "\nClusters - SOLVE ITERATION ",MAX_DEPTH-i
-		#pp.pprint(clusters)
-		i=i-1
-	print "RISOLUZIONE COMPLETATA con",threadCount,"thread risolutori.\n\n"
-
-
-
-def solve_thread_run(clusters_dict, first_path, threadCount):
-
-	tree_solution = []
-	#append first_path
-	tree_solution.append(first_path)
-	#remove occurrencies of first_path nodes
-	for node in first_path:
-		if(node!=0):
-			#print "remove all ", node, " occurrencies"
-			removeAllOccurrencesMulti(node,clusters_dict)
-	'''
-	threadLock.acquire()
-	print "\nTHREAD",threadCount," - SOLVE ITERATION "
-	pp.pprint(clusters_dict)
-	threadLock.release()
-	'''
-	i=MAX_DEPTH-1;
-
-	while i>=0:
-		#per ogni cluster
-		for j in range (1,n+1):
-			#cerca il cluster di profondita i
-			#se eiste
-			if(cluster_depth[j]>i):
-				#assegna array dei path
-				pathList = clusters_dict[j][i]
-				#se esiste
-				if(pathList):
-					#seleziona la prima occorrenza
-					path = pathList[0]
-					
-					tree_solution.append(path);
-					#rimuovi tutti i path che contengono i nodi del path scelto
-					for node in path:
-						if(node!=0):
-							removeAllOccurrencesMulti(node,clusters_dict)
-		i=i-1
-
-	return tree_solution
-
-
-def solve_tree():
-	i=MAX_DEPTH-1;
-
-	while i>=0:
-		#per ogni cluster
-		for j in range (1,n+1):
-			#cerca il cluster di profondita i
-			#se eiste
-			if(cluster_depth[j]>i):
-				#assegna array dei path
-				pathList = clusters[j][i]
-				#se esiste
-				if(pathList):
-					#seleziona la prima occorrenza
-					path = pathList[0]
-					
-					solution.append(path);
-					print "\n\nSelect path --->",path
-					#rimuovi tutti i path che contengono i nodi del path scelto
-					for node in path:
-						if(node!=0):
-							#print "remove all ", node, " occurrencies"
-							removeAllOccurrences(node)
-		i=i-1
-
-
-def removeAllOccurrences(node):
-	for x in range (1,(n+1)):
-		cluster=clusters[x];
-
-		for y in range (0,MAX_DEPTH):
-
-			clusters[node][y] = []
-
-			if(cluster_depth[x]>y):
-				pathList=cluster[y];
-				pathListCopy=copy.copy(pathList)
-			
-				for path in pathListCopy:
-					if(node in path):
-						
-						pathList.remove(path)
-
-
-def removeAllOccurrencesMulti(node, clusters_dict):
-	for x in range (1,(n+1)):
-		cluster=clusters_dict[x];
-
-		for y in range (0,MAX_DEPTH):
-
-			clusters_dict[node][y] = []
-
-			if(cluster_depth[x]>y):
-				pathList=cluster[y];
-				pathListCopy=copy.copy(pathList)
-			
-				for path in pathListCopy:
-					if(node in path):
-						
-						pathList.remove(path)
 
 
 
@@ -445,64 +191,7 @@ def compute_danger(my_path):
 	return path_danger
 
 
-#tra un vettori di path ritorna quello con meno dangerous
-def min_dangerous(paths):
-	min_danger = 9999
-	min_danger_path = []
-	for pat in paths:
-		if compute_danger(pat) < min_danger:  
-			min_danger = compute_danger(pat)
-			min_danger_path = pat
-	return min_danger_path
-
-
-def print_solution_multi(solution):
-	sol = {};
-	for i in range (1,(n+1)):
-		sol[i] = 0;
-
-	for path in solution:
-		for j in range(0,(len(path)-1)):
-			sol[path[j]]=path[j+1]
-
-	for k in range (1,n+1):
-		print k," ",sol[k]
-
-
-def print_solution():
-	sol = {};
-	for i in range (1,(n+1)):
-		sol[i] = 0;
-
-	for path in solution:
-		for j in range(0,(len(path)-1)):
-			sol[path[j]]=path[j+1]
-
-	for k in range (1,n+1):
-		print k," ",sol[k]
-
-
-def check_best_solution(final_solution,new_solution):
-	#first solution found
-	if(len(final_solution)==0):
-		final_solution=copy.deepcopy(new_solution)
-		return
-
-	#solution has less leaves
-	if(len(new_solution)<len(final_solution)):
-		final_solution=copy.deepcopy(new_solution)
-		return
-
-	#solution has same leaves
-	if(len(new_solution)<len(final_solution)):
-		#check risk
-		return
-
-
-
 ### METODI NUOVI ###
-
-#def create_basic_solution():
 
 def init_reachables(center_node):
 	node_list = {};
@@ -686,12 +375,6 @@ for i in range (1,n+1):
 	is_reachable_by[i] = sorted(x.items(), key=operator.itemgetter(1))
 
 
-
-print nodi_disponibili
-#pp.pprint(reachables)
-pp.pprint(is_reachable_by)
-
-
 #local_solution = []
 #nodi_disp = [1...n]
 
@@ -721,37 +404,37 @@ BEST_SOL = basic_solution
 
 
 
-for i in range (1, n+1):
-	for sol in basic_solution:
-		sol.reverse()
+# for i in range (1, n+1):
+# 	for sol in basic_solution:
+# 		sol.reverse()
 
-	if (len(basic_solution)<BEST_LEAVES):
-		BEST_SOL = copy.deepcopy(basic_solution)
-		BEST_LEAVES = len(BEST_SOL)
-	BEST_RISK = compute_danger_sol(basic_solution)
-	print "SOL:", BEST_SOL, "LEAVES ", BEST_LEAVES, " Risk: ", BEST_RISK
+# 	if (len(basic_solution)<BEST_LEAVES):
+# 		BEST_SOL = copy.deepcopy(basic_solution)
+# 		BEST_LEAVES = len(BEST_SOL)
+# 	BEST_RISK = compute_danger_sol(basic_solution)
+# 	print "SOL:", BEST_SOL, "LEAVES ", BEST_LEAVES, " Risk: ", BEST_RISK
 	
-	node_after = i
-	for i in range (1,n+1):
-		nodi_disponibili.append(i)
+# 	node_after = i
+# 	for i in range (1,n+1):
+# 		nodi_disponibili.append(i)
 
-	basic_solution = []
-	zero_sorted_paths = sorted(zero_paths.items(), key=operator.itemgetter(1))
-	while (len(zero_sorted_paths) > 0 and len(basic_solution)<=BEST_LEAVES):
-		current_path = [0]
-		#prendi il piu vicino V a zero
-		current_node = zero_sorted_paths[0][0]
-		node_after = 0
-		#creo current_path = [0,V]
-		current_path.append(current_node)
+# 	basic_solution = []
+# 	zero_sorted_paths = sorted(zero_paths.items(), key=operator.itemgetter(1))
+# 	while (len(zero_sorted_paths) > 0 and len(basic_solution)<=BEST_LEAVES):
+# 		current_path = [0]
+# 		#prendi il piu vicino V a zero
+# 		current_node = zero_sorted_paths[0][0]
+# 		node_after = 0
+# 		#creo current_path = [0,V]
+# 		current_path.append(current_node)
 
-		validated_paths[concat(current_path)] = costs[current_node][0]
-		#rimuovo V dai nodi_disponibili
-		nodi_disponibili.remove(current_node)
-		zero_sorted_paths.remove((current_node,costs[current_node][0]))
+# 		validated_paths[concat(current_path)] = costs[current_node][0]
+# 		#rimuovo V dai nodi_disponibili
+# 		nodi_disponibili.remove(current_node)
+# 		zero_sorted_paths.remove((current_node,costs[current_node][0]))
 
 
-	explore_path(current_path,current_node,0)
+# 	explore_path(current_path,current_node,0)
 
 
 
@@ -762,30 +445,17 @@ for i in range (1,n+1):
 zero_sorted_paths = sorted(zero_paths.items(), key=operator.itemgetter(1))
 
 
+#per ogni nodo 
+print_solution_vertical(basic_solution)
 
-
-# for i in range(1, n+1):
-# 	nodeDisp = copy.deepcopy(nodi_disponibili)
-# 	zeroSort = copy.deepcopy(zero_sorted_paths)
-# 	solvingThread = SolverThread(nodeDisp, zeroSort, i)
-# 	solvingThread.start()
-# 	threadCount=threadCount+1
-# 	threads.append(solvingThread)
-# 	if(threadCount>=MAX_THREADS):
-# 		break
+#time
+time_final = time.time()-start
+print 'TOTAL time:', round(time_final,3), 'seconds.\n\n'
 
 
 
 
-
-
-
-<<<<<<< Updated upstream
-=======
-print is_reachable_by[2]
-
->>>>>>> Stashed changes
-
+############# COME FUNZIA #############
 #per ogni nodo che contiene V si prende il piu vicino U
 #controllo U-V-0
 	#se path ok:
@@ -798,10 +468,3 @@ print is_reachable_by[2]
 #controllo K-U-V-0
 	#se si
 #rimuovo U dai nodi_disponibili
-
-#per ogni nodo 
-print_solution_vertical(basic_solution)
-
-#time
-time_final = time.time()-start
-print 'TOTAL time:', round(time_final,3), 'seconds.\n\n'

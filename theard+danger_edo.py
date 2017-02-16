@@ -560,7 +560,7 @@ distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
 danger = []
 tree = defaultdict(list) #lista soluzioni
 
-file = 'res/pedibus_10.dat'
+file = 'res/pedibus_20.dat'
 
 
 ############## BODY ##############
