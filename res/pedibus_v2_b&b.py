@@ -13,7 +13,7 @@ start = time.time()
 ############## VARIABLES ##############
 
 # file dei dati:
-file = 'pedibus_100.dat'
+file = 'pedibus_300.dat'
 
 
 
