@@ -10,46 +10,31 @@ from collections import defaultdict
 start = time.time()
 
 
-############# THREAD #################
-class SolverThread (threading.Thread):
-    def __init__(self, nodeDisp, zeroSort, threadCount):
-        threading.Thread.__init__(self)
-        self.nodeDisp = nodeDisp
-        self.zeroSort = zeroSort
-        self.threadCount = threadCount
-        self.threadSolution = []
-        self.threadLeaves = n 
-        self.currentPath = []
-        self.currNode = threadCount
+############## VARIABLES ##############
+
+# file dei dati:
+file = 'pedibus_100.dat'
 
 
-    def run(self):	
-        #self.threadSolution=solve_thread_run(self.clusters,self.first_path, self.threadCount)
-        
-		test(self.currentPath, self.currNode, self.threadSolution, self.nodeDisp, self.zeroSort, self.threadCount)      
-		threadLock.acquire()
-		if len(threadSolution) <= BEST_LEAVES:
-			BEST_LEAVES = len(threadSolution)
-			BEST_SOL = threadSolution
-		threadLock.release()
 
+# contiene per ogni nodo i nodi raggiungibili
+zero_paths = {}
+zero_sorted_paths = []
+reachables = {}
+is_reachable_by = {}
 
-def test(currentPath,currNode, threadSolution, nodeDisp, zeroSort, threadCount):
-	tIndex = threadCount
-	while (len(zeroSort) > 0 and len(threadSolution)<=BEST_LEAVES):
-		currentPath = [0]
-		#prendi il piu vicino V a zero
-		currNode = zeroSort[tIndex][0]
-		tIndex = 0
-		#creo current_path = [0,V]
-		currentPath.append(currNode)
-		validated_paths[concat(currentPath)] = costs[currNode][0]
-		#rimuovo V dai nodi_disponibili
-		nodeDisp.remove(currNode)
-		zeroSort.remove((currNode,costs[currNode][0]))
+nodi_disponibili = [];
 
+validated_paths = {}
 
-		explore_thread(currentPath,currNode,0, threadSolution, nodeDisp, zeroSort)
+basic_solution = []
+
+#initialize dictionary for bus stop coordinates
+coord_x = {} #per coordinate x quando parso il dat
+coord_y = {} #per coordinate y quando parso il dat
+danger = []
+tree = defaultdict(list) #lista soluzioni
+
 
 
 ############## FUNCTION DECLARATION ##############
@@ -299,10 +284,12 @@ def explore_path(prec_path,my_node,index):
 			return prec_path
 
 
-def print_solution_vertical(solution):
-	sol = {};
+def reverse_solution(solution):
 	for pat in solution:
 		pat.reverse()
+
+def print_solution_vertical(solution):
+	sol = {};
 	
 	for i in range (1,(n+1)):
 		sol[i] = 0
@@ -313,6 +300,22 @@ def print_solution_vertical(solution):
 
 	for k in range (1,n+1):
 		print k," ",sol[k]
+
+def print_solution_to_file(solution):
+	sol = {};
+	output_name = "pedibus_" + str(n) + ".sol"
+
+	file = open(output_name, "w")
+	
+	for i in range (1,(n+1)):
+		sol[i] = 0
+
+	for path in solution:
+		for j in range(0,(len(path)-1)):
+			sol[path[j]]=path[j+1]
+
+	for k in range (1,n+1):
+		print >>file, k,sol[k]
 
 
 def compute_danger_sol(my_sol):
@@ -334,28 +337,6 @@ def compute_challenge_value(leaves,danger):
 		beta = 0.0001
 	return round(leaves+(danger*beta),4)
 
-############## VARIABLES ##############
-
-
-# contiene per ogni nodo i nodi raggiungibili
-zero_paths = {}
-zero_sorted_paths = []
-reachables = {}
-is_reachable_by = {}
-
-nodi_disponibili = [];
-
-validated_paths = {}
-
-basic_solution = []
-
-#initialize dictionary for bus stop coordinates
-coord_x = {} #per coordinate x quando parso il dat
-coord_y = {} #per coordinate y quando parso il dat
-danger = []
-tree = defaultdict(list) #lista soluzioni
-
-file = 'res/pedibus_50.dat'
 
 
 ############## BODY ##############
@@ -481,6 +462,7 @@ print "\nLEAVES:",BEST_LEAVES
 print "DANGER:",BEST_RISK
 print "CHALLENGE VALUE:",compute_challenge_value(BEST_LEAVES,BEST_RISK),"\n"
 #per ogni nodo 
+reverse_solution(BEST_SOL)
 print_solution_vertical(BEST_SOL)
 
 print "----------------------------------------------------"
@@ -490,6 +472,8 @@ time_final = time.time()-start
 print 'TOTAL time:', round(time_final,3), 'seconds.\n\n'
 
 
+print 'SOLUTION SAVED IN FILE: pedibus_' + str(n) + ".sol\n"
+print_solution_to_file(BEST_SOL)
 
 
 ############# COME FUNZIA #############
