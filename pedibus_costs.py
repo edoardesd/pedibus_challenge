@@ -130,48 +130,6 @@ def node_distance():
 
 	return neighbor
 
-#popola l'albero della soluzione con la soluzione base
-def create_starting_solution():
-	for i in range(1,n+1):
-			tree[i].append(i)
-			tree[i].append(0)
-
-	return tree
-
-#eliminare il nodo myNode
-def delete_node(myNode):
-	for i in range (1, len(tree)+1):
-		if myNode in tree[i]: 
-			tree[i].remove(myNode)
-
-#rimuovere nodi solo con 0
-def remove_zero_path(my_dict):
-	bool_elim = False
-	for i in range(1, len(my_dict)+1):
-		if len(my_dict[i]) == 1:
-			bool_elim = True
-			elim = i
-
-	if bool_elim:
-		del my_dict[elim]
-	return my_dict
-
-#controlla alpha condition
-def check_alpha(my_path, new_node):
-	tot_dist = 0 #inizializzo distanza totale a zero
-	times_alpha = ALPHA*neighbor[new_node][0] #alpha + distanza di new_node da 0
-	print "blblba ",times_alpha, neighbor[new_node][0]
-	for i in range (len(my_path)-1):
-		tot_dist = tot_dist + node_dist(my_path[i], my_path[i+1])
-		print "\nDistanza totale path: ", tot_dist + neighbor[new_node][0] #ATTENZIONEEEEE, distanza da il nodo mio agli altri
-	if tot_dist + neighbor[new_node][0] <= times_alpha:
-		print "true"
-		return True
-	else:
-		print "false"
-		return False
-
-
 def validate_path(path):
 	max_lenght = costs[path[0]][path[len(path)-1]]*ALPHA
 	lenght = 0
@@ -191,7 +149,7 @@ def validate_path(path):
 		first_node_cluster = clusters[first_node]
 		actual_depth = len(first_node_cluster) 
 
-		if(actual_depth<path_len-1 or (not sub_path in clusters[first_node][len(sub_path)-2])):
+		if(actual_depth < path_len-1 or (sub_path not in clusters[first_node][len(sub_path)-2])):
 			return False
 		#return validate_path(path[1:len(path)])
 	return True;
@@ -200,19 +158,12 @@ def is_reachable(center_node, other_node):
 	d1 = costs[center_node][0]
 	d2 = costs[other_node][0]
 
-	if costs[center_node][other_node]+d2<=d1*ALPHA:
+	if costs[center_node][other_node] + d2 <= d1*ALPHA:
 		return True
 	else: 
 		return False
 
 
-def contains(array, element):
-	for i in range (len(array)):
-		if array[i] == element:
-			#print array," CONTAINS ",element,"= TRUE"
-			return True
-	#print array," CONTAINS ",element,"= FALSE"
-	return False
 
 def compareLists(l1, l2):
 	for i in range (len(array)):
@@ -235,19 +186,19 @@ def clusterize(center_node, depth):
 	#se il cluster precedente non esiste, tronca ed esci
 	if(actual_depth <= depth-1):
 		print "tronco cluster per nodo", center_node
-		complete_clusters.append(center_node);
-		cluster_depth[center_node]=actual_depth
+		complete_clusters.append(center_node)
+		cluster_depth[center_node] = actual_depth
 		return paths
 
-	for i in range (0,len(clusters[center_node][depth-1])):
+	for i in range (0, len(clusters[center_node][depth-1])):
 		old_path = clusters[center_node][depth-1][i]
 
-		for j in range (0,len(reachables[center_node])):
+		for j in range (0, len(reachables[center_node])):
 			new_node = reachables[center_node][j]
-			if(not contains(old_path,new_node)):
+			if new_node not in old_path:
 				#inserisco new_node in old_path in seconda posizione 
-				new_path = copy.copy(old_path);
-				new_path.insert(1,new_node);		
+				new_path = copy.copy(old_path)
+				new_path.insert(1,new_node)		
 				if(validate_path(new_path)):
 					paths.append(new_path)
 
@@ -258,7 +209,7 @@ def init_reachables(center_node):
 	node_list = [];
 	#init reachability
 	for i in range (1,n):
-		if i!=center_node and is_reachable(center_node, i):
+		if i != center_node and is_reachable(center_node, i):
 			node_list.append(i)
 	return node_list
 
@@ -266,6 +217,7 @@ def init_reachables(center_node):
 def init_cluster(center_node):
 	clusterZero = {};
 	node_list = [];
+	#node_list = center_node + node_list
 	node_list.append([center_node,0]);
 	clusterZero[0] = node_list;
 	cluster_depth[center_node] = MAX_DEPTH-1;
@@ -313,7 +265,7 @@ def solve_tree():
 #			
 
 		print "\nClusters - SOLVE ITERATION ",MAX_DEPTH-i
-		pp.pprint(clusters)
+		#pp.pprint(clusters)
 		i=i-1
 
 
@@ -331,8 +283,7 @@ def removeAllOccurrences(node):
 				pathListCopy=copy.copy(pathList)
 			
 				for path in pathListCopy:
-					if(node in path):
-						
+					if node in path:
 						pathList.remove(path)
 
 #calcola il pericolo di un path
@@ -402,7 +353,7 @@ distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
 danger = []
 tree = defaultdict(list) #lista soluzioni
 
-file = 'res/pedibus_20.dat'
+file = 'res/pedibus_30.dat'
 
 
 ############## BODY ##############
@@ -410,7 +361,7 @@ n, ALPHA, node, danger, costs = parse_dat_file(file)
 
 #MAD-DEPTH -> limite di profondita con cui vendono generati i cluster per ogni nodo
 #puo andare da 1 a n, se troppo alto crasha il programma
-MAX_DEPTH = 8
+MAX_DEPTH = 6
 
 #print parameters for check
 print "n: ", n, "\n" "ALPHA: ", ALPHA, "\n\n"

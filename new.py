@@ -1,4 +1,18 @@
-#Parsa il file, occhio che ritorna 5 valori, costs e' una matrice con tutti i costi
+import time
+start = time.time() #faccio partire il tempo 
+
+############## IMPORT LIBRARIES ##############
+from itertools import chain
+from collections import defaultdict
+import copy
+import numpy as np
+import pprint as pp
+import math
+import itertools
+import operator
+
+
+############## FUNCTION DECLARATION ##############
 def parse_dat_file(dat_file):
 	file_dat = np.genfromtxt(file, delimiter='\n', dtype=None)
 
@@ -101,29 +115,61 @@ def parse_dat_file(dat_file):
 	
 	return n, ALPHA, coord, danger, costs
 
-#calcola il pericolo di un path
-def compute_danger(my_path):
-	path_danger = 0
-	for i in range(0, len(my_path)-1):
-		path_danger = path_danger + danger[my_path[i]][my_path[i+1]]
-
-	return path_danger
+#calcola distanza euclidea tra due nodi
+def node_dist(index_1, index_2):
+	sub_x = math.pow((node[index_1][0] - node[index_2][0]), 2)
+	sub_y = math.pow((node[index_1][1] - node[index_2][1]), 2)
+	return math.sqrt(sub_x + sub_y)
 
 
-#tra un vettori di path ritorna quello con meno dangerous
-def min_dangerous(paths):
-	min_danger = 9999
-	min_danger_path = []
-	for pat in paths:
-		if compute_danger(pat) < min_danger:  
-			min_danger = compute_danger(pat)
-			min_danger_path = pat
-	return min_danger_path
+#crea dizionario con distanza di un nodo ad ogni altro nodo
+def node_distance():
+	for key1, value1 in node.items():
+		distance.clear()
+		for key2, value2 in node.items():
+			if key1 != key2:
+				distance[key2] = node_dist(key1, key2)
+				neighbor[key1] = distance.copy()
 
-#calcola il danger da una soluzione completa
-def compute_danger_sol(my_sol):
-	total_danger = 0
-	for s_path in my_sol:
-		total_danger = total_danger + compute_danger(s_path)
+	return neighbor
 
-	return total_danger
+############## VARIABLES ##############
+
+#initialize dictionary for bus stop coordinates
+coord_x = {} #per coordinate x quando parso il dat
+coord_y = {} #per coordinate y quando parso il dat
+neighbor = {} #ogni nodo con gli altri per distanza
+distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
+cluster = {} #cluster di ogni nodo (i nodi all'interno del raggio alpha*distanza da root)
+queue = [] #nodi non ancora assegnati
+solution = []
+with_out_root = {}
+
+tree = defaultdict(list) #lista soluzioni
+
+file = 'res/pedibus_10.dat'
+
+############## BODY ##############
+n, ALPHA, node, danger, costs = parse_dat_file(file)
+
+#print parameters for check
+print "n: ",n, "\n" "ALPHA: ", ALPHA, "\n\n"
+
+with_out_root = copy.copy(node)
+with_out_root.pop(0)
+
+for nod in with_out_root:
+	queue.append(nod)
+
+
+neighbor = node_distance()
+node_sorted = sorted(neighbor[0].items(), key=operator.itemgetter(1))
+
+
+
+
+
+
+############## END BODY ##############
+#time
+print '\nIt took', time.time()-start, 'seconds.'

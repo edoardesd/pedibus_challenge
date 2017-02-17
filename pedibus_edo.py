@@ -13,6 +13,10 @@ import operator
 
 
 ############## FUNCTION DECLARATION ##############
+def pairwise(iterable):
+    a = iter(iterable)
+    return izip(a, a)
+
 def parse_dat_file(dat_file):
 	file_dat = np.genfromtxt(file, delimiter='\n', dtype=None)
 
@@ -106,7 +110,7 @@ def parse_dat_file(dat_file):
 		for j in range(0, (n+1)):
 			costs[i][j] = float("{0:.4f}".format(math.sqrt((coord_x[i]-coord_x[j])**2 + (coord_y[i]-coord_y[j])**2)))
 
-
+	print coord_x
 	#possibile ottimizzare le fusione in un unico dizionario, anche piu sopra
 	#merge the two dictionaries
 	coord = defaultdict(list)
@@ -162,18 +166,16 @@ def remove_zero_path(my_dict):
 def check_alpha(new_path):
 
 	dist_tot = 0 #inizializzo distanza totale a zero
-	final_leaf = neighbor[new_path[0]][0] #nodo finale del path, quello dal quale controllare la distanza
+	final_leaf = costs[new_path[0]][0] #nodo finale del path, quello dal quale controllare la distanza
 	times_alpha = ALPHA*final_leaf 
 	
-	print "Leaf: ", final_leaf, "times alfa: ", times_alpha
 	for i in range (len(new_path)-1):
-		dist_tot = dist_tot + node_dist(new_path[i], new_path[i+1])
+		dist_tot = dist_tot + costs[new_path[i]][new_path[i+1]]
 		print dist_tot
 	
-	print "\nDistanza totale path: ", dist_tot # dist_tot distanza da il nodo mio agli altri
+	
 	print new_path
 	if dist_tot <= times_alpha:
-		print "Condizione alpha soddisfatta, il path col nuovo nodo va bene"
 		#se condizione alfa e' soddisfatta controllare se la condizione alfa va bene anche per
 		#il path piu' piccolo all'interno del path precedente e cosi' via
 		if (len(new_path)) > 3:
@@ -185,12 +187,12 @@ def check_alpha(new_path):
 	
 
 	else:
-		print "Condizione alpha NON soddisfatta, path da scartare"
 		return False
 
 #creo cluster: creo un dizionario.
 #le key sono i nodi, i value sono una lista con i nodi all'interno del raggio alpha*distanza da root
 def create_cluster():
+
 	single_cluster = []
 	for key in node.items(): #scandisco tutti i nodi
 		if key[0] != 0: #salto il nodo 0
@@ -201,7 +203,6 @@ def create_cluster():
 				if node_sorted[j][0] != 0: #il nodo 0 (scuola) non deve essere nel cluster
 					if node_sorted[j][1] <= alpha_range:
 						single_cluster.append(node_sorted[j][0])
-		
 			cluster[key[0]] = list(single_cluster) #copia il cluster attuale nel dizionario di cluster
 
 	return cluster
@@ -250,6 +251,8 @@ def create_path(max_cl):
 def compute_danger(my_path):
 	path_danger = 0
 	for i in range(0, len(my_path)-1):
+		print "path len: ", my_path[i], my_path[i+1]
+		print path_danger
 		path_danger = path_danger + danger[my_path[i]][my_path[i+1]]
 
 	return path_danger
@@ -263,6 +266,14 @@ def min_dangerous(paths):
 			min_danger = compute_danger(pat)
 			min_danger_path = pat
 	return min_danger_path
+
+#calcola danger da una soluzione completa
+def compute_danger_sol(my_sol):
+	total_danger = 0
+	for s_path in my_sol:
+		total_danger = total_danger + compute_danger(s_path)
+		print "toytal damner: ",total_danger
+	return total_danger
 ############## VARIABLES ##############
 
 #initialize dictionary for bus stop coordinates
@@ -284,9 +295,15 @@ n, ALPHA, node, danger, costs = parse_dat_file(file)
 #print parameters for check
 print "n: ",n, "\n" "ALPHA: ", ALPHA, "\n\n", 
 
-print costs[7][2]
 
-paths = [[2, 3, 4, 5, 6, 0],  [2, 7, 10, 0], [2,3,4,5,6,7,8,9,0], [33, 45, 0], [0]]
+neighbor = node_distance()
+
+
+sandro = [3,4,5,7,6,8]
+
+print check_alpha([6,1,0])
+
+print compute_danger_sol([[2, 4, 10, 0], [9, 8, 0], [7, 5, 3, 0], [6, 1, 0]])
 
 # queue = initialize_queue()
 

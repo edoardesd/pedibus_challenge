@@ -561,7 +561,11 @@ distance = {} #distanza da un nodo ad un altro, per poi metterla in neighbor
 danger = []
 tree = defaultdict(list) #lista soluzioni
 
+<<<<<<< Updated upstream
 file = 'res/pedibus_10.dat'
+=======
+file = 'res/pedibus_20.dat'
+>>>>>>> Stashed changes
 
 
 ############## BODY ##############
@@ -572,7 +576,7 @@ best_leaves = n
 
 #MAD-DEPTH -> limite di profondita con cui vendono generati i cluster per ogni nodo
 #puo andare da 1 a n, se troppo alto crasha il programma
-MAX_DEPTH = 10
+MAX_DEPTH = 20
 
 MAX_THREADS = 300
 threadLock = threading.Lock()
