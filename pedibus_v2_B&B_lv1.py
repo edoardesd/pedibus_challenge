@@ -55,12 +55,17 @@ def test(currentPath,currNode, threadSolution, nodeDisp, zeroSort, threadCount):
 ############## FUNCTION DECLARATION ##############
 #Parsa il file, occhio che ritorna 5 valori, costs e' una matrice con tutti i costi
 def parse_dat_file(dat_file):
-	file_dat = np.genfromtxt(file, delimiter='\n', dtype=None)
+	file_dat = np.genfromtxt(dat_file, delimiter='\n', dtype=None)
 
-	n = int(file_dat[1][11:]) #parse param n: dimension of array
+	cast = 0 
+	if "20.dat" in dat_file:
+		cast = 1
 
-	ALPHA = float(file_dat[3][15:]) #parse param alpha
-	file_dat = file_dat[5:]
+	n = int(file_dat[1-cast][11:]) #parse param n: dimension of array
+
+	ALPHA = float(file_dat[3-cast][15:]) #parse param alpha
+	value = 5-cast
+	file_dat = file_dat[value:]
 
 	raw_x = []
 	raw_y = [] 
@@ -355,7 +360,7 @@ coord_y = {} #per coordinate y quando parso il dat
 danger = []
 tree = defaultdict(list) #lista soluzioni
 
-file = 'res/pedibus_50.dat'
+file = 'res/pedibus_20.dat'
 
 
 ############## BODY ##############
