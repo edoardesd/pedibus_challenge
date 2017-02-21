@@ -13,7 +13,7 @@ start = time.time()
 ############## VARIABLES ##############
 
 # file dei dati:
-file = 'pedibus_10.dat'
+file = 'pedibus_200.dat'
 
 
 
@@ -341,6 +341,34 @@ def compute_challenge_value(leaves,danger):
 	if (n > 1000):
 		beta = 0.0001
 	return round(leaves+(danger*beta),4)
+
+
+def create_solution(initial_node, depth_index):
+	selected_node = initial_node
+
+
+	if initial_node == depth_index:
+		depth_index += 1
+	while (len(zero_sorted_paths) > 0 and len(basic_solution)<=BEST_LEAVES):
+ 		current_path = [0]
+
+ 		if depth_index >= len(zero_sorted_paths):
+ 			depth_index = 0
+ 			selected_node = 0 
+ 		#prendi l'i-esimo nodo piu vicino a zero
+ 		current_node = zero_sorted_paths[selected_node][0]
+
+ 		selected_node = depth_index
+ 		#creo current_path = [0,V]
+ 		current_path.append(current_node)
+
+ 		validated_paths[concat(current_path)] = costs[current_node][0]
+ 		#rimuovo V dai nodi_disponibili
+ 		nodi_disponibili.remove(current_node)
+ 		zero_sorted_paths.remove((current_node,costs[current_node][0]))
+
+ 		explore_path(current_path,current_node,0)
+
 ############## VARIABLES ##############
 
 
@@ -427,41 +455,31 @@ BEST_RISK = compute_danger_sol(basic_solution)
 
 for i in range (1,n):
 
- 	selected_node = i
- 	#reset nodi disp
- 	nodi_disponibili = []
- 	zero_sorted_paths = []
+ 	#selected_node = i
 
- 	for j in range (1,n+1):
- 		nodi_disponibili.append(j)
+ 	
+	for k in range (0, (n/2)):
+		nodi_disponibili = []
+	 	zero_sorted_paths = []
 
- 	#reset basic solution
-	basic_solution = []
-	#reset zero sorted
-	zero_sorted_paths = sorted(zero_paths.items(), key=operator.itemgetter(1))
+	 	for j in range (1,n+1):
+	 		nodi_disponibili.append(j)
 
- 	while (len(zero_sorted_paths) > 0 and len(basic_solution)<=BEST_LEAVES):
- 		current_path = [0]
- 		#prendi l'i-esimo nodo piu vicino a zero
- 		current_node = zero_sorted_paths[selected_node][0]
- 		selected_node = 0
- 		#creo current_path = [0,V]
- 		current_path.append(current_node)
+	 	#reset basic solution
+		basic_solution = []
+		#reset zero sorted
+		zero_sorted_paths = sorted(zero_paths.items(), key=operator.itemgetter(1))
 
- 		validated_paths[concat(current_path)] = costs[current_node][0]
- 		#rimuovo V dai nodi_disponibili
- 		nodi_disponibili.remove(current_node)
- 		zero_sorted_paths.remove((current_node,costs[current_node][0]))
+ 		create_solution(i, k)
 
- 		explore_path(current_path,current_node,0)
 
- 	# UPDATE BEST IF NEEDED
- 	new_leaves = len(basic_solution)
- 	new_risk = compute_danger_sol(basic_solution)
- 	if(new_leaves<BEST_LEAVES or (new_leaves==BEST_LEAVES and new_risk<BEST_RISK)):
- 		BEST_SOL = basic_solution
- 		BEST_LEAVES = new_leaves
- 		BEST_RISK = new_risk
+ 		# UPDATE BEST IF NEEDED
+	 	new_leaves = len(basic_solution)
+	 	new_risk = compute_danger_sol(basic_solution)
+	 	if(new_leaves<BEST_LEAVES or (new_leaves==BEST_LEAVES and new_risk<BEST_RISK)):
+	 		BEST_SOL = basic_solution
+	 		BEST_LEAVES = new_leaves
+	 		BEST_RISK = new_risk
 
 
 
@@ -477,7 +495,6 @@ print "DANGER:",BEST_RISK
 print "CHALLENGE VALUE:",compute_challenge_value(BEST_LEAVES,BEST_RISK),"\n"
 #per ogni nodo 
 reverse_solution(BEST_SOL)
-print_solution_vertical(BEST_SOL)
 
 print "----------------------------------------------------"
 
