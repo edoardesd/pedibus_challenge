@@ -251,8 +251,7 @@ def create_path(max_cl):
 def compute_danger(my_path):
 	path_danger = 0
 	for i in range(0, len(my_path)-1):
-		print "path len: ", my_path[i], my_path[i+1]
-		print path_danger
+		
 		path_danger = path_danger + danger[my_path[i]][my_path[i+1]]
 
 	return path_danger
@@ -272,7 +271,7 @@ def compute_danger_sol(my_sol):
 	total_danger = 0
 	for s_path in my_sol:
 		total_danger = total_danger + compute_danger(s_path)
-		print "toytal damner: ",total_danger
+		
 	return total_danger
 ############## VARIABLES ##############
 
@@ -301,9 +300,10 @@ neighbor = node_distance()
 
 sandro = [3,4,5,7,6,8]
 
-print check_alpha([6,1,0])
+print check_alpha([2, 9, 8, 0])
 
-print compute_danger_sol([[2, 4, 10, 0], [9, 8, 0], [7, 5, 3, 0], [6, 1, 0]])
+print "\n\ndange:"
+print compute_danger_sol([[4, 10, 0], [9, 4, 8, 0], [7, 5, 3, 0], [6, 1, 0]])
 
 # queue = initialize_queue()
 
