@@ -423,17 +423,6 @@ BEST_LEAVES = len(basic_solution)
 BEST_RISK = compute_danger_sol(basic_solution)
 
 
-####################
-
-
-
-# 	if (len(basic_solution)<BEST_LEAVES):
-# 		BEST_SOL = copy.deepcopy(basic_solution)
-# 		BEST_LEAVES = len(BEST_SOL)
-# 	BEST_RISK = compute_danger_sol(basic_solution)
-# 	print "SOL:", BEST_SOL, "LEAVES ", BEST_LEAVES, " Risk: ", BEST_RISK
-	
-
 # ESPLORA SOLUZIONI ALTERNATIVE DA 0 E CONFRONTA
 
 for i in range (1,n):
