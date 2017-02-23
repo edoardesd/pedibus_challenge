@@ -16,8 +16,9 @@ start = time.time()
 # file dei dati:
 #se non gli metto niente prendo il file inserito qua
 if len(sys.argv) == 1:
-	file = 'pedibus_10.dat'
+	file = 'pedibus_300.dat'
 #se inserisco un file dat dal terminale prende quello
+
 else: file = sys.argv[1]
 
 
@@ -351,24 +352,39 @@ def compute_challenge_value(leaves,danger):
 def iterate_last_node(my_risk, my_node, index):
 	#calcolo il rischio (nodo preso - ultimo nodo degli altri patthini)
 	val = 0
+	isNewPath = False
 	for pat in sol_cpy:
 	
 		test_danger = danger[my_node][pat[-1]]
+		best_local_risk = my_risk
+
 
 		#print "\n\nrisky da comparare : ", my_risk, test_danger
 		#se danger e' zero vuol dire che sto calcolando il danger con me stesso
 		if test_danger != 0:
 			#guardo se e' minore del path precedente
 			if test_danger < my_risk:
-				#se va bene vedo se il path e' valido
-				bool_path, pat = check_path(pat, my_node)
-				#print "\ncontorllo il check path ", bool_path, pat
-				#se path e' valido lo modifico in sol_cpy
-				if bool_path:
-					sol_cpy[index].remove(my_node)
-					sol_cpy[val].append(my_node)
-					#print "\nsono nell'ultimo ciclo, path buono: ", pat, "\n\n"
-					return sol_cpy
+				if test_danger < best_local_risk:
+					#se va bene vedo se il path e' valido
+					bool_path, pat = check_path(pat, my_node)
+					#print "\ncontorllo il check path ", bool_path, pat
+
+					#se path e' valido lo modifico in sol_cpy
+					if bool_path:
+						best_local_risk = test_danger
+						best_index = val
+						isNewPath = True
+
+		if isNewPath == True:
+			print "\nindez, node", best_index, my_node
+			print "quasimodo"
+			print "val, len", val, len(pat)
+			if val == (len(sol_cpy)-1):
+				print "sono chi"
+				sol_cpy[index].remove(my_node)
+				sol_cpy[best_index].append(my_node)
+							#print "\nsono nell'ultimo ciclo, path buono: ", pat, "\n\n"
+				return sol_cpy
 
 		val = val + 1
 		#print "sono l'indice sbarazzino: ", val
