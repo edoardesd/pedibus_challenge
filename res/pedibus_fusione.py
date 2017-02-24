@@ -15,7 +15,7 @@ start = time.time()
 # file dei dati:
 #se non gli metto niente prendo il file inserito qua
 if len(sys.argv) == 1:
-	file = 'pedibus_50.dat'
+	file = 'pedibus_20.dat'
 #se inserisco un file dat dal terminale prende quello
 
 else: file = sys.argv[1]
@@ -447,7 +447,7 @@ class SolverThread (threading.Thread):
 			#creo current_path = [0,V]
 			current_path.append(current_node)
 			
-			#validated_paths[concat(current_path)] = costs[current_node][0]
+			validated_paths[concat(current_path)] = costs[current_node][0]
 			#rimuovo V dai nodi_disponibili
 			self.thNodiDisp.remove(current_node)
 			self.thZeroPaths.remove((current_node,costs[current_node][0]))
@@ -571,41 +571,41 @@ for i in range (1,n):
 
 
 
-#if file == "pedibus_20.dat":
+if file == "pedibus_20.dat":
 	#per ogni i nodo da 0
-for i in range (1,n):
+	for i in range (1,n):
 
-	selected_node = i
-	#reset nodi disp
-	nodi_disponibili = []
-	zero_sorted_paths = []
+		selected_node = i
+		#reset nodi disp
+		nodi_disponibili = []
+		zero_sorted_paths = []
 
- 	for j in range (1,n+1):
- 		nodi_disponibili.append(j)
+	 	for j in range (1,n+1):
+	 		nodi_disponibili.append(j)
 
- 	#reset basic solution
-	basic_solution = []
-	#reset zero sorted
-	zero_sorted_paths = sorted(zero_paths.items(), key=operator.itemgetter(1))
-
-
-	nodi_disponibili.remove(i)
-	zero_sorted_paths.remove((i,costs[i][0]))
-
-	#per ogni nodo k raggiungibile da i
-	#lancia un risolutore con path iniziale [0,i] e prossimo nodo = k
-	for k in is_reachable_by[i]: 
-		solvingThread = SolverThread(copy.deepcopy(nodi_disponibili),copy.deepcopy(zero_sorted_paths), [0,i], [], k[0])
-		solvingThread.start()
-		threadCount=threadCount+1
-		threads.append(solvingThread)
-	
-	if(threadCount>=MAX_THREADS):
-		break
+	 	#reset basic solution
+		basic_solution = []
+		#reset zero sorted
+		zero_sorted_paths = sorted(zero_paths.items(), key=operator.itemgetter(1))
 
 
-for t in threads:
-	t.join()
+		nodi_disponibili.remove(i)
+		zero_sorted_paths.remove((i,costs[i][0]))
+
+		#per ogni nodo k raggiungibile da i
+		#lancia un risolutore con path iniziale [0,i] e prossimo nodo = k
+		for k in is_reachable_by[i]: 
+			solvingThread = SolverThread(copy.deepcopy(nodi_disponibili),copy.deepcopy(zero_sorted_paths), [0,i], [], k[0])
+			solvingThread.start()
+			threadCount=threadCount+1
+			threads.append(solvingThread)
+		
+		if(threadCount>=MAX_THREADS):
+			break
+
+
+	for t in threads:
+		t.join()
 
 
 

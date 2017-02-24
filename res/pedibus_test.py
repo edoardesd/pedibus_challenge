@@ -15,7 +15,7 @@ start = time.time()
 # file dei dati:
 #se non gli metto niente prendo il file inserito qua
 if len(sys.argv) == 1:
-	file = 'pedibus_50.dat'
+	file = 'pedibus_20.dat'
 #se inserisco un file dat dal terminale prende quello
 
 else: file = sys.argv[1]
@@ -571,7 +571,6 @@ for i in range (1,n):
 
 
 
-#if file == "pedibus_20.dat":
 	#per ogni i nodo da 0
 for i in range (1,n):
 
