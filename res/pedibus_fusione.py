@@ -13,7 +13,7 @@ start = time.time()
 ############## VARIABLES ##############
 
 # file dei dati:
-file = 'pedibus_10.dat'
+file = 'pedibus_50.dat'
 
 
 
@@ -619,7 +619,8 @@ for i in range(0, len(sol_cpy)):
 
 
 BEST_SOL = sol_cpy
-
+BEST_LEAVES = len(BEST_SOL)
+BEST_RISK = compute_danger_sol(BEST_SOL)
 
 print "\n\n----------------------------------------------------\n"
 
