@@ -123,7 +123,7 @@ def parse_dat_file(dat_file):
 def node_dist(index_1, index_2):
 	sub_x = math.pow((node[index_1][0] - node[index_2][0]), 2)
 	sub_y = math.pow((node[index_1][1] - node[index_2][1]), 2)
-	return math.sqrt(sub_x + sub_y)
+	return round(math.sqrt(sub_x + sub_y), 4)
 
 #crea dizionario con distanza di un nodo ad ogni altro nodo
 def node_distance():
@@ -286,7 +286,7 @@ initial_sol = {}
 
 tree = defaultdict(list) #lista soluzioni
 
-file = 'res/pedibus_10.dat'
+file = 'res/pedibus_30.dat'
 
 ############## BODY ##############
 n, ALPHA, node, danger, costs = parse_dat_file(file)
@@ -294,16 +294,20 @@ n, ALPHA, node, danger, costs = parse_dat_file(file)
 #print parameters for check
 print "n: ",n, "\n" "ALPHA: ", ALPHA, "\n\n", 
 
-
+print node
 neighbor = node_distance()
 
 
+pp.pprint(neighbor)
 sandro = [3,4,5,7,6,8]
 
-print check_alpha([2, 9, 8, 0])
+print check_alpha([18, 1, 0])
 
 print "\n\ndange:"
-print compute_danger_sol([[4, 10, 0], [9, 4, 8, 0], [7, 5, 3, 0], [6, 1, 0]])
+print compute_danger_sol([[4, 1, 0], [9, 4, 8, 0], [7, 5, 3, 0], [6, 1, 0]])
+
+
+
 
 # queue = initialize_queue()
 
