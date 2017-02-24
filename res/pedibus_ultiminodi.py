@@ -16,7 +16,7 @@ start = time.time()
 # file dei dati:
 #se non gli metto niente prendo il file inserito qua
 if len(sys.argv) == 1:
-	file = 'pedibus_300.dat'
+	file = 'pedibus_10.dat'
 #se inserisco un file dat dal terminale prende quello
 
 else: file = sys.argv[1]
@@ -47,9 +47,12 @@ tree = defaultdict(list) #lista soluzioni
 def parse_dat_file(dat_file):
 	file_dat = np.genfromtxt(dat_file, delimiter='\n', dtype=None)
 
-	cast = 0 
-	if "20.dat" in dat_file:
-		cast = 1
+	cast = 0
+
+	if "data;" in file_dat[0]:
+		cast = 0
+	else: cast = 1
+
 
 	n = int(file_dat[1-cast][11:]) #parse param n: dimension of array
 
@@ -549,7 +552,8 @@ print "----------------------------------------------------"
 #time
 time_final = time.time()-start
 print 'TOTAL time:', round(time_final,3), 'seconds.\n\n'
-
+reverse_solution(BEST_SOL)
+print_solution_vertical(BEST_SOL)
 
 print 'SOLUTION SAVED IN FILE: pedibus_' + str(n) + ".sol\n"
 print_solution_to_file(BEST_SOL)
