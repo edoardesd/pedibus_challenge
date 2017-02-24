@@ -4,6 +4,7 @@ import math
 import copy
 import pprint as pp
 import operator
+import sys
 import threading
 from itertools import chain
 from collections import defaultdict
@@ -11,11 +12,13 @@ start = time.time()
 
 
 ############## VARIABLES ##############
-
 # file dei dati:
-file = 'pedibus_50.dat'
+#se non gli metto niente prendo il file inserito qua
+if len(sys.argv) == 1:
+	file = 'pedibus_20.dat'
+#se inserisco un file dat dal terminale prende quello
 
-
+else: file = sys.argv[1]
 
 # contiene per ogni nodo i nodi raggiungibili
 zero_paths = {}
@@ -42,9 +45,11 @@ tree = defaultdict(list) #lista soluzioni
 def parse_dat_file(dat_file):
 	file_dat = np.genfromtxt(dat_file, delimiter='\n', dtype=None)
 
-	cast = 0 
-	if "20.dat" in dat_file:
-		cast = 1
+	cast = 0
+
+	if "data;" in file_dat[0]:
+		cast = 0
+	else: cast = 1
 
 	n = int(file_dat[1-cast][11:]) #parse param n: dimension of array
 
